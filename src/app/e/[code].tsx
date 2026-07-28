@@ -120,6 +120,7 @@ export default function EventPortalScreen() {
   }
 
   const isRevealed = new Date() >= new Date(eventData.reveal_at);
+  const isEnded = eventData.end_at ? new Date() >= new Date(eventData.end_at) : false;
 
   if (showGallery && isRevealed) {
     return (
@@ -130,6 +131,58 @@ export default function EventPortalScreen() {
           eventData={eventData}
           onViewCamera={() => setShowGallery(false)}
         />
+      </View>
+    );
+  }
+
+  if (isEnded && !showGallery) {
+    return (
+      <View className="flex-1 bg-black">
+        <Stack.Screen options={{ headerShown: false }} />
+        <StatusBar style="light" />
+
+        {/* Background Cover Photo */}
+        <Image
+          source={{ uri: Platform.OS === 'android' && eventData.cover_photo_url ? eventData.cover_photo_url.replace('127.0.0.1', '10.0.2.2').replace('localhost', '10.0.2.2') : (eventData.cover_photo_url || "https://images.unsplash.com/photo-1519225421980-715cb0215aed?q=80&w=800&auto=format&fit=crop") }}
+          style={{ position: 'absolute', width: '100%', height: '100%', opacity: 0.8 }}
+          contentFit="cover"
+        />
+
+        {/* Dark Gradients for Text Readability */}
+        <LinearGradient
+          colors={['rgba(0,0,0,0.4)', 'rgba(0,0,0,0.8)', '#000000']}
+          style={{ position: 'absolute', width: '100%', height: '100%' }}
+        />
+
+        <View className="flex-1 justify-end p-6 md:p-12 pb-12">
+          {/* Back Button */}
+          <Pressable
+            onPress={() => router.back()}
+            className="absolute top-16 left-6 w-10 h-10 rounded-full bg-white/10 items-center justify-center border border-white/20 active:scale-95"
+            style={{ zIndex: 50 }}
+          >
+            <Text className="text-white text-center font-mono text-lg">←</Text>
+          </Pressable>
+
+          <View className="items-center">
+            <Text className="font-serif text-5xl md:text-7xl text-white mb-4 text-center tracking-tight leading-tight">
+              {eventData.title}
+            </Text>
+
+            <Text className="font-serif text-xl md:text-2xl text-white/90 italic text-center mb-8 px-4 leading-relaxed">
+              Event has ended. Thank you for contributing to the experience.
+            </Text>
+
+            <Pressable
+              onPress={() => setShowGallery(true)}
+              className="w-full py-5 rounded-[2rem] bg-white shadow-xl active:scale-95 transition-transform max-w-sm"
+            >
+              <Text className="text-center font-mono font-bold uppercase tracking-widest text-xs text-black">
+                Click here to see the event photos
+              </Text>
+            </Pressable>
+          </View>
+        </View>
       </View>
     );
   }

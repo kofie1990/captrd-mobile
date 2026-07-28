@@ -6,7 +6,8 @@ import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { Camera, Check, Grid3x3, Image as ImageIcon, RefreshCcw, X, Zap, ZapOff } from 'lucide-react-native';
+import { Camera, Check, Grid3x3, Image as ImageIcon, RefreshCcw, X, Zap, ZapOff, UploadCloud } from 'lucide-react-native';
+import { FailedUpload, saveFailedUpload, getFailedUploads, deleteFailedUpload } from '@/lib/failedUploads';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Dimensions, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, FadeInUp, FadeOutUp, withRepeat, withTiming, Easing } from 'react-native-reanimated';
@@ -40,6 +41,12 @@ export function CameraViewfinder({
   const [flash, setFlash] = useState<FlashMode>('off');
   const [isCapturing, setIsCapturing] = useState(false);
   const [uploadQueue, setUploadQueue] = useState(0);
+  const [pendingUploads, setPendingUploads] = useState<FailedUpload[]>([]);
+  
+  useEffect(() => {
+    getFailedUploads().then(uploads => setPendingUploads(uploads.filter(u => u.eventId === eventId)));
+  }, [eventId]);
+
   const [latestPhoto, setLatestPhoto] = useState<string | undefined>(initialLatestPhoto);
   const [photoCount, setPhotoCount] = useState(0);
 
@@ -260,24 +267,83 @@ export function CameraViewfinder({
     processUpload(uriToUpload, mediaTypeToUpload, base64ToUpload);
   };
 
+  const retryPendingUploads = async () => {
+    if (pendingUploads.length === 0) return;
+    
+    // Refresh session to avoid RLS/token expiration errors
+    await supabase.auth.getSession();
+
+    const currentPending = [...pendingUploads];
+    setPendingUploads([]); // Optimistically clear
+    let failedAgain: FailedUpload[] = [];
+
+    for (const item of currentPending) {
+       try {
+         setUploadQueue(prev => prev + 1);
+         
+         let fileData: string;
+         if (item.isVideo) {
+           fileData = await new FileSystem.File(item.uri).base64();
+         } else {
+           fileData = await FileSystem.readAsStringAsync(item.uri, { encoding: FileSystem.EncodingType.Base64 });
+         }
+
+         const contentType = item.isVideo ? 'video/mp4' : 'image/jpeg';
+
+         const { error: uploadError } = await supabase.storage
+           .from('event-photos')
+           .upload(item.fileName, decode(fileData), { contentType, upsert: true });
+           
+         if (uploadError) throw uploadError;
+
+         const { data: publicUrlData } = supabase.storage.from('event-photos').getPublicUrl(item.fileName);
+         
+         const { error: dbError } = await supabase.from('photos').insert([{
+           event_id: item.eventId,
+           guest_name: item.guestName,
+           storage_path: publicUrlData.publicUrl,
+           media_type: item.isVideo ? 'video' : 'image'
+         }]);
+
+         if (dbError) throw dbError;
+
+         await deleteFailedUpload(item.id);
+       } catch (e) {
+         console.error("Retry failed for", item.fileName, e);
+         failedAgain.push(item);
+       } finally {
+         setUploadQueue(prev => Math.max(0, prev - 1));
+       }
+    }
+    
+    if (failedAgain.length > 0) {
+      setPendingUploads(failedAgain);
+      Alert.alert('Retry Failed', `${failedAgain.length} uploads still failed. Please check your connection and try again.`);
+    } else {
+      Alert.alert('Success', 'All failed uploads were successfully retried!');
+      setPhotoCount(prev => prev + currentPending.length - failedAgain.length);
+    }
+  };
+
   const processUpload = async (uri: string, mediaType: 'photo' | 'video', base64: string | null) => {
+    const ext = mediaType === 'video' ? 'mp4' : 'jpg';
+    const fileName = `${eventId}/${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
+
     try {
+      // Ensure session is fresh before uploading
+      await supabase.auth.getSession();
+
       let fileData: string;
       let contentType: string;
-      let ext: string;
 
       if (mediaType === 'video') {
         fileData = await new FileSystem.File(uri).base64();
         contentType = 'video/mp4';
-        ext = 'mp4';
       } else {
         if (!base64) throw new Error('Base64 missing');
         fileData = base64;
         contentType = 'image/jpeg';
-        ext = 'jpg';
       }
-
-      const fileName = `${eventId}/${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
 
       const { error: uploadError } = await supabase.storage
         .from('event-photos')
@@ -306,7 +372,18 @@ export function CameraViewfinder({
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
       console.error('Upload error:', error);
-      Alert.alert('Upload Error', 'A capture failed to upload. Please try again.');
+      const failedItem: FailedUpload = {
+        id: fileName,
+        uri: '', // Will be set by saveFailedUpload
+        fileName,
+        eventId,
+        guestName,
+        isVideo: mediaType === 'video',
+        timestamp: Date.now()
+      };
+      await saveFailedUpload(failedItem, uri);
+      setPendingUploads(prev => [...prev, failedItem]);
+      Alert.alert('Upload Error', 'Failed to upload, but your photo was saved locally and can be retried later.');
     } finally {
       setUploadQueue(prev => Math.max(0, prev - 1));
     }
@@ -386,6 +463,17 @@ export function CameraViewfinder({
             <Text style={s.toastText}>
               {uploadQueue} upload{uploadQueue > 1 ? 's' : ''} in progress...
             </Text>
+          </Animated.View>
+        )}
+
+        {pendingUploads.length > 0 && uploadQueue === 0 && (
+          <Animated.View entering={FadeInUp.duration(300)} exiting={FadeOutUp.duration(300)} style={[s.toastOverlay, { backgroundColor: 'rgba(239,68,68,0.8)', borderColor: 'rgba(239,68,68,0.5)' }]}>
+            <Pressable onPress={retryPendingUploads} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <UploadCloud size={14} color="#fff" />
+              <Text style={[s.toastText, { fontFamily: 'Inter_700Bold' }]}>
+                Retry {pendingUploads.length} Failed
+              </Text>
+            </Pressable>
           </Animated.View>
         )}
 

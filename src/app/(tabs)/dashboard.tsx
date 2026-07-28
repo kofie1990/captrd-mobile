@@ -7,6 +7,9 @@ import { StatusBar } from 'expo-status-bar';
 import { ArrowRight, Image as ImageIcon, Plus, QrCode, X } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Dimensions, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { InviteCaptureView } from '@/components/InviteCaptureView';
+import * as Sharing from 'expo-sharing';
+import { useRef } from 'react';
 
 const { width } = Dimensions.get('window');
 
@@ -18,6 +21,7 @@ type Event = {
   short_code: string;
   max_photos_per_user: number;
   cover_photo_url?: string;
+  invite_details?: string;
 };
 
 export default function DashboardScreen() {
@@ -33,6 +37,31 @@ export default function DashboardScreen() {
 
   const [isJoinModalVisible, setIsJoinModalVisible] = useState(false);
   const [shortCode, setShortCode] = useState('');
+
+  const [shareItem, setShareItem] = useState<Event | null>(null);
+  const viewShotRef = useRef<any>(null);
+
+  const handleShareInvite = async (item: Event) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setShareItem(item);
+    // Give it a brief moment to render with the new item data
+    setTimeout(async () => {
+      if (viewShotRef.current) {
+        try {
+          const uri = await viewShotRef.current.capture();
+          if (await Sharing.isAvailableAsync()) {
+            await Sharing.shareAsync(uri, {
+              dialogTitle: 'Share your event invite',
+              mimeType: 'image/jpeg',
+            });
+          }
+        } catch (error) {
+          console.error("Failed to capture and share invite:", error);
+        }
+      }
+      setShareItem(null);
+    }, 300);
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -200,7 +229,7 @@ export default function DashboardScreen() {
                 isGuest={activeTab === 'joined'}
                 onPressCard={() => router.push(`/e/${item.short_code}?gallery=true`)}
                 onPressCamera={() => router.push(`/e/${item.short_code}`)}
-                onPressShare={() => { }}
+                onPressShare={() => handleShareInvite(item)}
                 onPressManage={() => {
                   if (activeTab === 'created') {
                     router.push(`/manage/${item.id}` as any);
@@ -291,6 +320,18 @@ export default function DashboardScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Hidden view for capturing invite share image */}
+      {shareItem && (
+        <InviteCaptureView
+          ref={viewShotRef}
+          title={shareItem.title}
+          dateStr={new Date(shareItem.reveal_at).toLocaleDateString()}
+          inviteDetails={shareItem.invite_details || ''}
+          coverPhotoUrl={shareItem.cover_photo_url || ''}
+          shortCode={shareItem.short_code}
+        />
+      )}
     </View>
   );
 }

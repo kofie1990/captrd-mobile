@@ -266,6 +266,8 @@ export function FilmRollGallery({ eventData, onViewCamera }: FilmRollGalleryProp
     columns[i % COLUMN_COUNT].push(photo);
   });
 
+  const isEnded = eventData.end_at ? new Date() >= new Date(eventData.end_at) : false;
+
   return (
     <View style={s.root}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
@@ -287,7 +289,7 @@ export function FilmRollGallery({ eventData, onViewCamera }: FilmRollGalleryProp
 
           <Pressable onPress={onViewCamera} style={s.backBtn}>
             <ArrowLeft size={16} color="#fff" />
-            <Text style={s.backBtnText}>Camera</Text>
+            <Text style={s.backBtnText}>{isEnded ? 'Back' : 'Camera'}</Text>
           </Pressable>
         </View>
 

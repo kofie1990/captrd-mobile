@@ -61,6 +61,10 @@ export function CreateEventWizard({ userId, onEventCreated, onCancel }: Props) {
   const [customRevealDate, setCustomRevealDate] = useState<Date | null>(new Date());
   const [customRevealTime, setCustomRevealTime] = useState<Date | null>(new Date());
   
+  const [endOption, setEndOption] = useState("24_hours");
+  const [customEndDate, setCustomEndDate] = useState<Date | null>(new Date());
+  const [customEndTime, setCustomEndTime] = useState<Date | null>(new Date());
+  
   const [guestTierIdx, setGuestTierIdx] = useState(0);
   const selectedTier = GUEST_TIERS[guestTierIdx];
   const [customMaxPhotos, setCustomMaxPhotos] = useState(selectedTier.maxPhotos.toString());
@@ -141,6 +145,23 @@ export function CreateEventWizard({ userId, onEventCreated, onCancel }: Props) {
       finalCoverUrl = uploadedImagePreview || selectedPreset;
     }
 
+    let finalEndAtStr = new Date().toISOString();
+    if (endOption === "custom" && customEndDate && customEndTime) {
+      const finalEndDate = new Date(customEndDate);
+      finalEndDate.setHours(customEndTime.getHours(), customEndTime.getMinutes(), 0, 0);
+      finalEndAtStr = finalEndDate.toISOString();
+    } else if (eventDate) {
+      const date = new Date(eventDate.getTime());
+      if (endOption === "24_hours") {
+        date.setDate(date.getDate() + 1);
+      } else if (endOption === "48_hours") {
+        date.setDate(date.getDate() + 2);
+      } else if (endOption === "1_week") {
+        date.setDate(date.getDate() + 7);
+      }
+      finalEndAtStr = date.toISOString();
+    }
+
     const maxPhotos = selectedTier.guests === 3 ? 5 : (parseInt(customMaxPhotos) || 10);
 
     const { data, error } = await supabase
@@ -148,6 +169,7 @@ export function CreateEventWizard({ userId, onEventCreated, onCancel }: Props) {
       .insert([{
         title,
         reveal_at: finalRevealAtStr,
+        end_at: finalEndAtStr,
         aesthetic_filter: filter,
         admin_id: userId,
         short_code: generateShortCode(),
@@ -162,7 +184,7 @@ export function CreateEventWizard({ userId, onEventCreated, onCancel }: Props) {
     if (!error && data) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setCreatedEvent(data);
-      setStep(7);
+      setStep(8);
     } else {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       console.log('Error creating event:', error);
@@ -224,6 +246,31 @@ export function CreateEventWizard({ userId, onEventCreated, onCancel }: Props) {
         );
       case 4:
         return (
+          <Animated.View entering={direction > 0 ? SlideInRight : SlideInLeft} exiting={direction > 0 ? SlideOutLeft : SlideOutRight} className="flex-1 px-8 pt-12">
+             <CustomDropdown
+              label="When does the roll expire?"
+              value={endOption}
+              onChange={setEndOption}
+              options={[
+                { label: "24 Hours After Start", value: "24_hours" },
+                { label: "48 Hours After Start", value: "48_hours" },
+                { label: "1 Week After Start", value: "1_week" },
+                { label: "Custom Date & Time...", value: "custom" }
+              ]}
+            />
+            {endOption === 'custom' && (
+              <Animated.View entering={FadeIn} className="mt-8 gap-6 border-t border-white/10 pt-8">
+                <CustomDatePicker label="End Date" selectedDate={customEndDate} onSelect={setCustomEndDate} />
+                <CustomTimePicker label="End Time" selectedTime={customEndTime} onSelect={setCustomEndTime} />
+              </Animated.View>
+            )}
+            <Text className="text-white/40 text-sm font-serif italic mt-6">
+              After this time, guests will no longer be able to take new photos.
+            </Text>
+          </Animated.View>
+        );
+      case 5:
+        return (
           <Animated.View entering={direction > 0 ? SlideInRight : SlideInLeft} exiting={direction > 0 ? SlideOutLeft : SlideOutRight} className="flex-1 pt-12">
             <Text className="px-8 font-mono text-xs uppercase tracking-widest text-white/60 mb-4">Max Number of Guests</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 16 }}>
@@ -272,7 +319,7 @@ export function CreateEventWizard({ userId, onEventCreated, onCancel }: Props) {
             </View>
           </Animated.View>
         );
-      case 5:
+      case 6:
         return (
           <Animated.View entering={direction > 0 ? SlideInRight : SlideInLeft} exiting={direction > 0 ? SlideOutLeft : SlideOutRight} className="flex-1 pt-12">
              <Text className="px-8 font-mono text-xs uppercase tracking-widest text-white/60 mb-6">Aesthetic Filter</Text>
@@ -307,7 +354,7 @@ export function CreateEventWizard({ userId, onEventCreated, onCancel }: Props) {
     }
   };
 
-  if (step === 6) {
+  if (step === 7) {
     return (
       <View className="flex-1 bg-black">
         <View className="absolute inset-0">
@@ -430,7 +477,7 @@ export function CreateEventWizard({ userId, onEventCreated, onCancel }: Props) {
     );
   }
 
-  if (step === 7 && createdEvent) {
+  if (step === 8 && createdEvent) {
     return (
       <View className="flex-1 bg-black justify-center items-center px-8">
         <View className="w-24 h-24 bg-white/10 border border-white/20 rounded-full items-center justify-center mb-8">
@@ -467,7 +514,7 @@ export function CreateEventWizard({ userId, onEventCreated, onCancel }: Props) {
     <View className="flex-1 bg-black pt-16 pb-10">
       <View className="px-8 flex-row justify-between items-center mb-8">
         <Text className="font-serif text-3xl text-white">New Film Roll</Text>
-        <Text className="font-mono text-[10px] text-white/50 uppercase tracking-widest">Step {step} of 5</Text>
+        <Text className="font-mono text-[10px] text-white/50 uppercase tracking-widest">Step {step} of 6</Text>
       </View>
 
       <View className="flex-1">
