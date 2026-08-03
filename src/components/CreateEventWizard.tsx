@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, Dimensions, KeyboardAvoidingView, Platform, Modal, Image as RNImage, Share, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, Dimensions, KeyboardAvoidingView, Platform, Modal, Image as RNImage, Share } from 'react-native';
+import { LoadingState } from '@/components/ui/LoadingState';
 import Animated, { FadeIn, FadeOut, SlideInRight, SlideOutLeft, SlideInLeft, SlideOutRight } from 'react-native-reanimated';
 import { ArrowRight, ArrowLeft, CheckCircle2, Upload, Sparkles, Image as ImageIcon, Edit3, X } from 'lucide-react-native';
 import { CustomDatePicker } from './ui/CustomDatePicker';
@@ -404,7 +405,7 @@ export function CreateEventWizard({ userId, onEventCreated, onCancel }: Props) {
               className="w-full bg-white py-4 rounded-full flex-row items-center justify-center gap-2 pointer-events-auto active:scale-95 transition-transform"
             >
               {isSubmitting ? (
-                <ActivityIndicator color="#000" />
+                <LoadingState.Spinner size={16} />
               ) : (
                 <>
                   <Text className="font-mono text-sm uppercase tracking-widest font-bold text-black">Publish Event</Text>

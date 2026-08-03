@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { ArrowLeft, Book, CheckCircle, ChevronLeft, ChevronRight, Image as ImageIcon, LayoutGrid } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Dimensions, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { LoadingState } from '@/components/ui/LoadingState';
 
 const { width } = Dimensions.get('window');
 
@@ -97,11 +98,7 @@ export default function OrderScreen() {
   };
 
   if (loading) {
-    return (
-      <View className="flex-1 bg-[#09090b] items-center justify-center">
-        <ActivityIndicator color="#fff" />
-      </View>
-    );
+    return <LoadingState.Screen />;
   }
 
   if (orderComplete) {
@@ -245,7 +242,7 @@ export default function OrderScreen() {
                     disabled={simulatingCheckout || !shippingName || !shippingAddress || !shippingCity || !shippingZip}
                     className={`w-full py-4 rounded-full flex-row justify-center items-center ${(simulatingCheckout || !shippingName || !shippingAddress || !shippingCity || !shippingZip) ? 'bg-white/40' : 'bg-white active:scale-95'}`}
                   >
-                    {simulatingCheckout && <ActivityIndicator color="#000" size="small" style={{ marginRight: 8 }} />}
+                    {simulatingCheckout && <LoadingState.Spinner size={16} style={{ marginRight: 8 }} />}
                     <Text className="text-black font-mono font-bold uppercase tracking-widest text-xs">
                       {simulatingCheckout ? "Processing..." : "Place Order"}
                     </Text>
@@ -307,7 +304,7 @@ export default function OrderScreen() {
                 <View className="bg-white/5 border border-white/10 rounded-[2rem] overflow-hidden items-center justify-center p-6" style={{ minHeight: 380 }}>
                   {fetchingPhotos ? (
                     <View className="items-center justify-center" style={{ height: 300 }}>
-                      <ActivityIndicator color="#fff" />
+                      <LoadingState.Spinner size={32} />
                       <Text className="font-mono text-xs uppercase tracking-widest text-white/60 mt-4">Loading preview...</Text>
                     </View>
                   ) : format === "photobook" ? (

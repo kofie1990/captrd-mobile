@@ -8,6 +8,7 @@ import { ArrowRight, Image as ImageIcon, Plus, QrCode, X } from 'lucide-react-na
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Dimensions, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { InviteCaptureView } from '@/components/InviteCaptureView';
+import { LoadingState } from '@/components/ui/LoadingState';
 import * as Sharing from 'expo-sharing';
 import { useRef } from 'react';
 
@@ -115,11 +116,7 @@ export default function DashboardScreen() {
   };
 
   if (loading) {
-    return (
-      <View className="flex-1 bg-[#09090b] items-center justify-center">
-        <ActivityIndicator color="#fff" />
-      </View>
-    );
+    return <LoadingState.Screen />;
   }
 
   const currentList = activeTab === 'created' ? events : joinedEvents;
@@ -276,7 +273,16 @@ export default function DashboardScreen() {
               </Pressable>
             </View>
 
-            <Pressable style={{ width: '100%', backgroundColor: '#fff', padding: 20, borderRadius: 24, flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 32 }}>
+            <Pressable 
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                setIsJoinModalVisible(false);
+                setTimeout(() => {
+                  router.push('/scan');
+                }, 300);
+              }}
+              style={{ width: '100%', backgroundColor: '#fff', padding: 20, borderRadius: 24, flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 32 }}
+            >
               <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(0,0,0,0.05)', alignItems: 'center', justifyContent: 'center' }}>
                 <QrCode size={24} color="#000" />
               </View>

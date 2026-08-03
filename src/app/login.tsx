@@ -4,9 +4,12 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, LogBox, Platform, Pressable, Text, View } from 'react-native';
+import { KeyboardAvoidingView, LogBox, Platform, Pressable, Text, View } from 'react-native';
+import { LoadingState } from '@/components/ui/LoadingState';
 import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 import * as QueryParams from 'expo-auth-session/build/QueryParams';
+import { makeRedirectUri } from 'expo-auth-session';
 import Svg, { Path } from 'react-native-svg';
 
 // Suppress known harmless warnings
@@ -18,11 +21,8 @@ LogBox.ignoreLogs([
 
 WebBrowser.maybeCompleteAuthSession();
 
-// Use an HTTPS redirect URL on your own domain.
-// Supabase won't match exp:// schemes, but it will always match HTTPS URLs.
-// openAuthSessionAsync intercepts this URL BEFORE the browser navigates to it,
-// so no page needs to exist at this path.
-const REDIRECT_URL = 'https://captrd.live/auth/mobile-callback';
+// Generate redirect URI — in Expo Go this returns exp://IP:PORT
+const redirectUrl = makeRedirectUri();
 
 export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
@@ -37,7 +37,7 @@ export default function LoginScreen() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: REDIRECT_URL,
+          redirectTo: redirectUrl,
           skipBrowserRedirect: true,
         },
       });
@@ -45,11 +45,9 @@ export default function LoginScreen() {
       if (error) throw error;
 
       if (data?.url) {
-        // openAuthSessionAsync will close the browser as soon as it detects
-        // navigation to REDIRECT_URL, capturing the full URL with tokens
         const result = await WebBrowser.openAuthSessionAsync(
           data.url,
-          REDIRECT_URL
+          redirectUrl
         );
 
         if (result.type === 'success' && result.url) {
@@ -113,7 +111,7 @@ export default function LoginScreen() {
             className={`mt-4 bg-white py-4 px-6 flex-row items-center justify-center rounded-full active:scale-[0.98] transition-transform shadow-[0_0_20px_rgba(255,255,255,0.2)] ${loading ? 'opacity-50' : ''}`}
           >
             {loading ? (
-              <ActivityIndicator color="#000" />
+              <LoadingState.Spinner size={16} />
             ) : (
               <>
                 <View className="mr-3">
@@ -130,6 +128,24 @@ export default function LoginScreen() {
               </>
             )}
           </Pressable>
+
+          <Text className="text-center text-xs text-white/50 mt-2">
+            By signing in, you agree to our{' '}
+            <Text
+              className="underline text-white/50"
+              onPress={() => Linking.openURL('https://captrd.live/terms')}
+            >
+              Terms of Service
+            </Text>
+            {' '}and{' '}
+            <Text
+              className="underline text-white/50"
+              onPress={() => Linking.openURL('https://captrd.live/privacy')}
+            >
+              Privacy Policy
+            </Text>
+            .
+          </Text>
         </View>
 
         {message ? (
@@ -141,4 +157,3 @@ export default function LoginScreen() {
     </KeyboardAvoidingView>
   );
 }
-

@@ -13,6 +13,7 @@ import QRCode from 'react-native-qrcode-svg';
 import * as Linking from 'expo-linking';
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
+import { LoadingState } from '@/components/ui/LoadingState';
 
 const FILTER_PREVIEWS: Record<string, string> = {
   none: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80",
@@ -211,11 +212,7 @@ export default function ManageEventScreen() {
   };
 
   if (loading || !eventData) {
-    return (
-      <View className="flex-1 bg-black items-center justify-center">
-        <ActivityIndicator color="#fff" />
-      </View>
-    );
+    return <LoadingState.ManageScreen />;
   }
 
   const isRevealed = new Date() >= new Date(eventData.reveal_at);
@@ -255,7 +252,7 @@ export default function ManageEventScreen() {
               <ArrowLeft size={20} color="#fff" />
             </Pressable>
             <Pressable onPress={handleCoverUpload} disabled={uploadingCover} className="bg-black/40 rounded-full px-4 py-2 border border-white/20 flex-row items-center gap-2">
-              {uploadingCover ? <ActivityIndicator size="small" color="#fff" /> : <UploadCloud size={16} color="#fff" />}
+              {uploadingCover ? <LoadingState.Spinner size={16} /> : <UploadCloud size={16} color="#fff" />}
               <Text className="text-white font-mono text-[10px] uppercase tracking-widest">{uploadingCover ? 'Uploading...' : 'Update Cover'}</Text>
             </Pressable>
           </View>
@@ -333,7 +330,7 @@ export default function ManageEventScreen() {
 
             {updatingFilter && (
               <View className="absolute top-6 right-6 z-10">
-                <ActivityIndicator size="small" color="#fff" />
+                <LoadingState.Spinner size={16} />
               </View>
             )}
 

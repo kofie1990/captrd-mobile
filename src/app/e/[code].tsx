@@ -8,7 +8,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { LoadingState } from '@/components/ui/LoadingState';
 
 export default function EventPortalScreen() {
   const { code, gallery } = useLocalSearchParams();
@@ -90,14 +91,7 @@ export default function EventPortalScreen() {
   };
 
   if (loading) {
-    return (
-      <View className="flex-1 bg-black items-center justify-center">
-        <Stack.Screen options={{ headerShown: false }} />
-        <StatusBar style="light" />
-        <Text className="font-mono text-xs uppercase tracking-widest text-white/50 mb-4">Loading Roll...</Text>
-        <ActivityIndicator color="#fff" />
-      </View>
-    );
+    return showGallery ? <LoadingState.Grid /> : <LoadingState.Screen />;
   }
 
   if (!eventData) {

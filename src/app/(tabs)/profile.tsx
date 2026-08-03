@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, ScrollView, Pressable, Alert } from 'react-native';
+import { View, Text, ScrollView, Pressable, Alert, Linking } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { LogOut, Settings, User as UserIcon } from 'lucide-react-native';
+import { LogOut, Settings, User as UserIcon, Wand2, ExternalLink } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -15,6 +15,10 @@ export default function ProfileScreen() {
     if (error) {
       Alert.alert("Error signing out", error.message);
     }
+  };
+
+  const openStudioSubscription = () => {
+    Linking.openURL('https://captrd.live/studio');
   };
 
   return (
@@ -49,6 +53,22 @@ export default function ProfileScreen() {
             </View>
             <Text className="font-sans text-white text-base">Account Settings</Text>
           </View>
+        </Pressable>
+
+        <Pressable 
+          onPress={openStudioSubscription}
+          className="glass p-5 rounded-2xl flex-row items-center justify-between active:scale-[0.98] transition-transform"
+        >
+          <View className="flex-row items-center gap-4">
+            <View className="w-10 h-10 rounded-full bg-white/10 items-center justify-center">
+              <Wand2 size={20} color="#fff" />
+            </View>
+            <View>
+              <Text className="font-sans text-white text-base">Manage Studio Subscription</Text>
+              <Text className="font-sans text-white/50 text-xs">captrd.live/studio</Text>
+            </View>
+          </View>
+          <ExternalLink size={20} color="rgba(255,255,255,0.3)" />
         </Pressable>
 
         <Pressable 

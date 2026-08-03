@@ -5,10 +5,12 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Sharing from 'expo-sharing';
 import { useVideoPlayer, VideoView } from 'expo-video';
+import { FontAwesome5 } from '@expo/vector-icons';
 import { ArrowLeft, X as CloseIcon, Download, Play, Share } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Dimensions, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Dimensions, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { LoadingState } from '@/components/ui/LoadingState';
 import Animated, {
   Extrapolation,
   FadeIn,
@@ -36,6 +38,51 @@ const resolveLocalUrl = (url: string | undefined) => {
 };
 
 const AnimatedImage = Animated.createAnimatedComponent(Image);
+
+function ZoomableImage({ url }: { url: string }) {
+  const scale = useSharedValue(1);
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+
+  const pinchGesture = Gesture.Pinch()
+    .onUpdate((e) => {
+      scale.value = e.scale;
+    })
+    .onEnd(() => {
+      scale.value = withSpring(1);
+      translateX.value = withSpring(0);
+      translateY.value = withSpring(0);
+    });
+
+  const panGesture = Gesture.Pan()
+    .minPointers(2)
+    .onUpdate((e) => {
+      translateX.value = e.translationX;
+      translateY.value = e.translationY;
+    })
+    .onEnd(() => {
+      translateX.value = withSpring(0);
+      translateY.value = withSpring(0);
+    });
+
+  const composed = Gesture.Simultaneous(pinchGesture, panGesture);
+
+  const style = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+      { scale: scale.value }
+    ]
+  }));
+
+  return (
+    <GestureDetector gesture={composed}>
+      <Animated.View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <AnimatedImage source={{ uri: url }} style={[{ width: '100%', height: '100%' }, style]} contentFit="cover" />
+      </Animated.View>
+    </GestureDetector>
+  );
+}
 
 function GalleryVideoItem({ url, isPlaying, style, isMuted = false }: { url: string, isPlaying: boolean, style: any, isMuted?: boolean }) {
   const player = useVideoPlayer(url, player => {
@@ -72,6 +119,7 @@ function LightboxOverlay({ photos, initialIndex, onClose, onShare, onSave, isPro
   const translateY = useSharedValue(0);
 
   const panGesture = Gesture.Pan()
+    .maxPointers(1)
     .activeOffsetY([-10, 10])
     .failOffsetX([-10, 10])
     .onChange((event) => {
@@ -152,11 +200,7 @@ function LightboxOverlay({ photos, initialIndex, onClose, onShare, onSave, isPro
                   style={{ width: '100%', height: '100%' }}
                 />
               ) : (
-                <AnimatedImage
-                  source={{ uri: resolveLocalUrl(item.storage_path) }}
-                  style={{ width: '100%', height: '100%' }}
-                  contentFit="cover"
-                />
+                <ZoomableImage url={resolveLocalUrl(item.storage_path)} />
               )}
             </Animated.View>
           )}
@@ -174,14 +218,11 @@ function LightboxOverlay({ photos, initialIndex, onClose, onShare, onSave, isPro
             </View>
 
             <View style={s.lbActions}>
-              <Pressable onPress={() => onSave(activeMedia)} disabled={isProcessing} style={s.lbActionBtn}>
-                {isProcessing ? <ActivityIndicator color="#000" size="small" /> : <Download size={22} color="#000" />}
-              </Pressable>
               <Pressable onPress={() => onShare(activeMedia)} disabled={isProcessing} style={s.lbActionBtn}>
                 <Share size={22} color="#000" />
               </Pressable>
-              <Pressable onPress={() => onShare(activeMedia)} disabled={isProcessing} style={s.lbActionBtn}>
-                <Text style={{ fontSize: 18 }}>👻</Text>
+              <Pressable onPress={() => onSave(activeMedia)} disabled={isProcessing} style={s.lbActionBtn}>
+                {isProcessing ? <LoadingState.Spinner size={16} style={{ transform: [{scale: 0.8}] }} /> : <Download size={22} color="#000" />}
               </Pressable>
             </View>
           </>
@@ -256,7 +297,7 @@ export function FilmRollGallery({ eventData, onViewCamera }: FilmRollGalleryProp
   if (loading) {
     return (
       <View style={s.root}>
-        <ActivityIndicator color="#fff" style={{ marginTop: 100 }} />
+        <LoadingState.Grid />
       </View>
     );
   }

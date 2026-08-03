@@ -43,16 +43,16 @@ function InitialLayout() {
   useEffect(() => {
     if (!loaded || loading) return;
 
-    const inAuthGroup = segments[0] === '(tabs)';
-    const inEventGroup = segments[0] === 'e';
-    const inManageGroup = segments[0] === 'manage';
-    const inCreateGroup = segments[0] === 'create';
+    // Define routes that are accessible to everyone (like the event guest page)
+    const isPublic = !segments[0] || segments[0] === 'login' || segments[0] === 'index' || segments[0] === 'e';
+    // Define routes that authenticated users shouldn't see (like login)
+    const isAuthOnlyPrevented = !segments[0] || segments[0] === 'login' || segments[0] === 'index';
 
-    if (!session && (inAuthGroup || inManageGroup || inCreateGroup)) {
-      // Redirect to login if unauthenticated
+    if (!session && !isPublic) {
+      // If unauthenticated and trying to access a protected route, go to login
       router.replace('/login');
-    } else if (session && !inAuthGroup && !inEventGroup && !inManageGroup && !inCreateGroup) {
-      // Redirect to dashboard if authenticated (unless they are viewing an event, managing, or creating)
+    } else if (session && isAuthOnlyPrevented) {
+      // If authenticated and trying to access a public onboarding route, go to dashboard
       router.replace('/(tabs)/dashboard');
     }
   }, [session, loading, loaded, segments]);
@@ -70,6 +70,7 @@ function InitialLayout() {
           <Stack.Screen name="login" />
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="create" options={{ presentation: 'fullScreenModal' }} />
+          <Stack.Screen name="scan" options={{ presentation: 'fullScreenModal' }} />
           <Stack.Screen name="e/[code]" />
           <Stack.Screen name="manage/[id]" />
         </Stack>
