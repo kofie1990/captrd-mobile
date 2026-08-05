@@ -1,4 +1,4 @@
-import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -19,7 +19,7 @@ const ICONS: Record<string, React.FC<any>> = {
   profile: UserCircle,
 };
 
-export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+export function TabBar({ state, descriptors, navigation }: any) {
   const insets = useSafeAreaInsets();
   const rotation = useSharedValue(0);
   const router = useRouter();

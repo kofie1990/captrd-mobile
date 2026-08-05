@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, Dimensions, KeyboardAvoidingView, Platform, Modal, Image as RNImage, Share } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, Dimensions, KeyboardAvoidingView, Platform, Modal, Image as RNImage, Share, Alert } from 'react-native';
 import { LoadingState } from '@/components/ui/LoadingState';
 import Animated, { FadeIn, FadeOut, SlideInRight, SlideOutLeft, SlideInLeft, SlideOutRight } from 'react-native-reanimated';
 import { ArrowRight, ArrowLeft, CheckCircle2, Upload, Sparkles, Image as ImageIcon, Edit3, X } from 'lucide-react-native';
@@ -14,18 +14,20 @@ import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { format } from 'date-fns';
 import { LinearGradient } from 'expo-linear-gradient';
+import { usePurchases } from '@/hooks/usePurchases';
+import Purchases from 'react-native-purchases';
 
 const { width, height } = Dimensions.get('window');
 
 const GUEST_TIERS = [
-  { guests: 3, price: 0, maxPhotos: 5 },
-  { guests: 5, price: 25, maxPhotos: 15 },
-  { guests: 10, price: 35, maxPhotos: 20 },
-  { guests: 15, price: 45, maxPhotos: 25 },
-  { guests: 20, price: 55, maxPhotos: 30 },
-  { guests: 30, price: 75, maxPhotos: 35 },
-  { guests: 50, price: 125, maxPhotos: 40 },
-  { guests: 100, price: 150, maxPhotos: 50 },
+  { guests: 3, price: 0, maxPhotos: 5, rcPackageId: null },
+  { guests: 5, price: 2.19, maxPhotos: 15, rcPackageId: 'tier_5' },
+  { guests: 10, price: 3.19, maxPhotos: 20, rcPackageId: 'tier_10' },
+  { guests: 15, price: 4.19, maxPhotos: 25, rcPackageId: 'tier_15' },
+  { guests: 20, price: 5.19, maxPhotos: 30, rcPackageId: 'tier_20' },
+  { guests: 30, price: 7.19, maxPhotos: 35, rcPackageId: 'tier_30' },
+  { guests: 50, price: 12.99, maxPhotos: 40, rcPackageId: 'tier_50' },
+  { guests: 100, price: 15.99, maxPhotos: 50, rcPackageId: 'tier_100' },
 ];
 
 const PRESET_COVERS = [
@@ -52,6 +54,7 @@ type Props = {
 };
 
 export function CreateEventWizard({ userId, onEventCreated, onCancel }: Props) {
+  const { currentOffering, isReady } = usePurchases();
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -121,6 +124,33 @@ export function CreateEventWizard({ userId, onEventCreated, onCancel }: Props) {
     if (isSubmitting) return;
     setIsSubmitting(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    // RevenueCat Purchase Flow
+    if (selectedTier.price > 0 && selectedTier.rcPackageId) {
+      if (!isReady || !currentOffering) {
+        Alert.alert("Hold on", "We are still connecting to the App Store. Please try again in a moment.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const packageToBuy = currentOffering.availablePackages.find(p => p.identifier === selectedTier.rcPackageId);
+      
+      if (!packageToBuy) {
+        Alert.alert("Error", "This tier is currently unavailable for purchase. Please check your connection or try a different tier.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      try {
+        await Purchases.purchasePackage(packageToBuy);
+      } catch (error: any) {
+        if (!error.userCancelled) {
+          Alert.alert("Purchase Failed", error.message || "There was an error processing your transaction.");
+        }
+        setIsSubmitting(false);
+        return;
+      }
+    }
 
     let finalRevealAtStr = new Date().toISOString();
 
@@ -301,7 +331,7 @@ export function CreateEventWizard({ userId, onEventCreated, onCancel }: Props) {
                   </Text>
                 </View>
                 <Text className="font-serif text-3xl text-white">
-                  {selectedTier.price === 0 ? "Free" : `GH₵${selectedTier.price}`}
+                  {selectedTier.price === 0 ? "Free" : `$${selectedTier.price}`}
                 </Text>
               </View>
 

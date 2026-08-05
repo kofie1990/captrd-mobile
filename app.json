@@ -1,19 +1,26 @@
 {
   "expo": {
-    "name": "captrd-mobile",
+    "name": "Captrd",
     "slug": "captrd-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "captrdmobile",
+    "scheme": "captrd",
     "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "live.captrd.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#000000",
         "foregroundImage": "./assets/logo.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.captrdmobile"
+      "package": "live.captrd.app"
     },
     "web": {
       "output": "static",
@@ -34,11 +41,19 @@
       "expo-font",
       "expo-secure-store",
       "expo-sharing",
-      "expo-video"
+      "expo-video",
+      "expo-image",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e555997d-b0b1-41e7-b1af-fd70f516aeb0"
+      }
     }
   }
 }

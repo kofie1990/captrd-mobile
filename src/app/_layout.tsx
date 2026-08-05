@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { CustomSplashScreen } from '@/components/CustomSplashScreen';
+import { PurchasesProvider } from '@/hooks/usePurchases';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -102,7 +103,9 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AuthProvider>
-        <InitialLayout />
+        <PurchasesProvider>
+          <InitialLayout />
+        </PurchasesProvider>
       </AuthProvider>
     </GestureHandlerRootView>
   );
