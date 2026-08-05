@@ -3,7 +3,7 @@ import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Camera, LayoutDashboard, Package, Plus, User } from 'lucide-react-native';
+import { Aperture, Compass, PackageOpen, Plus, UserCircle } from 'lucide-react-native';
 import React from 'react';
 import { Dimensions, Pressable, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withSpring, withTiming } from 'react-native-reanimated';
@@ -13,10 +13,10 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const { width } = Dimensions.get('window');
 
 const ICONS: Record<string, React.FC<any>> = {
-  dashboard: LayoutDashboard,
-  studio: Camera,
-  order: Package,
-  profile: User,
+  dashboard: Compass,
+  studio: Aperture,
+  order: PackageOpen,
+  profile: UserCircle,
 };
 
 export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
@@ -37,8 +37,15 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
     };
   });
 
-  const routesLeft = state.routes.slice(0, 2);
-  const routesRight = state.routes.slice(2, 4);
+  const visibleRoutes = state.routes.filter(route => {
+    const { options } = descriptors[route.key] as any;
+    return options.tabBarItemStyle?.display !== 'none' && options.href !== null;
+  });
+
+  const isOddLayout = visibleRoutes.length % 2 !== 0;
+  const half = Math.ceil(visibleRoutes.length / 2);
+  const routesLeft = visibleRoutes.slice(0, half);
+  const routesRight = visibleRoutes.slice(half);
 
   return (
     <View style={{ paddingBottom: Math.max(insets.bottom, 20) }} className="absolute bottom-0 w-full items-center px-6 pointer-events-box-none">
@@ -60,31 +67,43 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
             backgroundColor: 'rgba(0,0,0,0.9)'
           }}
         >
-          <View className="flex-row items-center gap-8">
-            {routesLeft.map((route, index) => {
-              const { options } = descriptors[route.key];
-              const isFocused = state.index === index;
-              const Icon = ICONS[route.name] || LayoutDashboard;
-              return <TabItem key={route.key} route={route} isFocused={isFocused} navigation={navigation} Icon={Icon} label={options.title || route.name} />;
-            })}
-          </View>
+          {isOddLayout ? (
+            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingRight: 72 }}>
+              {visibleRoutes.map((route) => {
+                const { options } = descriptors[route.key];
+                const isFocused = state.index === state.routes.findIndex(r => r.key === route.key);
+                const Icon = ICONS[route.name] || LayoutDashboard;
+                return <TabItem key={route.key} route={route} isFocused={isFocused} navigation={navigation} Icon={Icon} label={options.title || route.name} />;
+              })}
+            </View>
+          ) : (
+            <>
+              <View className="flex-row items-center gap-8">
+                {routesLeft.map((route) => {
+                  const { options } = descriptors[route.key];
+                  const isFocused = state.index === state.routes.findIndex(r => r.key === route.key);
+                  const Icon = ICONS[route.name] || LayoutDashboard;
+                  return <TabItem key={route.key} route={route} isFocused={isFocused} navigation={navigation} Icon={Icon} label={options.title || route.name} />;
+                })}
+              </View>
 
-          {/* Spacer for central button */}
-          <View style={{ width: 1 }} />
+              {/* Spacer for central button */}
+              <View style={{ width: 1 }} />
 
-          <View className="flex-row items-center gap-8">
-            {routesRight.map((route, index) => {
-              const { options } = descriptors[route.key];
-              const actualIndex = index + 2;
-              const isFocused = state.index === actualIndex;
-              const Icon = ICONS[route.name] || LayoutDashboard;
-              return <TabItem key={route.key} route={route} isFocused={isFocused} navigation={navigation} Icon={Icon} label={options.title || route.name} />;
-            })}
-          </View>
+              <View className="flex-row items-center gap-8">
+                {routesRight.map((route) => {
+                  const { options } = descriptors[route.key];
+                  const isFocused = state.index === state.routes.findIndex(r => r.key === route.key);
+                  const Icon = ICONS[route.name] || LayoutDashboard;
+                  return <TabItem key={route.key} route={route} isFocused={isFocused} navigation={navigation} Icon={Icon} label={options.title || route.name} />;
+                })}
+              </View>
+            </>
+          )}
         </BlurView>
 
         {/* Elevated Unique Center Button */}
-        <View className="absolute z-50 items-center justify-center -top-3 pointer-events-auto left-1/2 -ml-8">
+        <View className={`absolute z-50 items-center justify-center -top-3 pointer-events-auto ${isOddLayout ? 'right-4' : 'left-1/2 -ml-8'}`}>
           <AnimatedPressable
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

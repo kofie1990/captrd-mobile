@@ -1,5 +1,6 @@
 import '../global.css';
 import { Platform } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { NavigationBar } from 'expo-navigation-bar';
 import * as SystemUI from 'expo-system-ui';
 
@@ -11,6 +12,7 @@ import { PlayfairDisplay_400Regular, PlayfairDisplay_400Regular_Italic } from '@
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { CustomSplashScreen } from '@/components/CustomSplashScreen';
 
 SplashScreen.preventAutoHideAsync();
@@ -22,6 +24,9 @@ function InitialLayout() {
 
   const [isAppReady, setIsAppReady] = useState(false);
   const [isSplashAnimationComplete, setIsSplashAnimationComplete] = useState(false);
+
+  // Initialize push notifications
+  usePushNotifications();
 
   const [loaded, error] = useFonts({
     Inter_400Regular,
@@ -84,7 +89,7 @@ function InitialLayout() {
   );
 }
 
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
 
 export default function RootLayout() {
   useEffect(() => {

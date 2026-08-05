@@ -1,7 +1,8 @@
 import { supabase } from '@/lib/supabase';
 import { decode } from 'base64-arraybuffer';
 import { CameraType, CameraView, FlashMode, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
-import * as FileSystem from 'expo-file-system';
+import { File } from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -236,10 +237,13 @@ export function CameraViewfinder({
   };
 
   const stopRecording = () => {
-    if (cameraRef.current && recording) {
+    if (cameraRef.current) {
       cameraRef.current.stopRecording();
-      setRecording(false);
-      if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
+    }
+    setRecording(false);
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = null;
     }
   };
 
@@ -283,7 +287,7 @@ export function CameraViewfinder({
          
          let fileData: string;
          if (item.isVideo) {
-           fileData = await new FileSystem.File(item.uri).base64();
+           fileData = await new File(item.uri).base64();
          } else {
            fileData = await FileSystem.readAsStringAsync(item.uri, { encoding: FileSystem.EncodingType.Base64 });
          }
@@ -337,7 +341,7 @@ export function CameraViewfinder({
       let contentType: string;
 
       if (mediaType === 'video') {
-        fileData = await new FileSystem.File(uri).base64();
+        fileData = await new File(uri).base64();
         contentType = 'video/mp4';
       } else {
         if (!base64) throw new Error('Base64 missing');

@@ -1,12 +1,14 @@
 import React from 'react';
 import { View, Text, ScrollView, Pressable, Alert, Linking } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { LogOut, Settings, User as UserIcon, Wand2, ExternalLink } from 'lucide-react-native';
+import { LogOut, Trash2, User as UserIcon, Wand2, ExternalLink, Package } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
+import { useRouter } from 'expo-router';
 
 export default function ProfileScreen() {
   const { user } = useAuth();
+  const router = useRouter();
   const userName = user?.user_metadata?.full_name || 'Photographer';
   const email = user?.email || '';
 
@@ -15,6 +17,34 @@ export default function ProfileScreen() {
     if (error) {
       Alert.alert("Error signing out", error.message);
     }
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Delete Account",
+      "Are you sure you want to permanently delete your account? This action cannot be undone and all your data will be lost.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            const { error } = await supabase.rpc('delete_user');
+            
+            if (error) {
+              Alert.alert("Error Deleting Account", error.message);
+            } else {
+              // Sign the user out locally since their backend account is now gone
+              await supabase.auth.signOut();
+              Alert.alert("Account Deleted", "Your account has been successfully deleted.");
+            }
+          }
+        }
+      ]
+    );
   };
 
   const openStudioSubscription = () => {
@@ -46,15 +76,6 @@ export default function ProfileScreen() {
           <Text className="font-mono text-[10px] uppercase tracking-widest text-white/50">{email}</Text>
         </View>
 
-        <Pressable className="glass p-5 rounded-2xl flex-row items-center justify-between active:scale-[0.98] transition-transform">
-          <View className="flex-row items-center gap-4">
-            <View className="w-10 h-10 rounded-full bg-white/10 items-center justify-center">
-              <Settings size={20} color="#fff" />
-            </View>
-            <Text className="font-sans text-white text-base">Account Settings</Text>
-          </View>
-        </Pressable>
-
         <Pressable 
           onPress={openStudioSubscription}
           className="glass p-5 rounded-2xl flex-row items-center justify-between active:scale-[0.98] transition-transform"
@@ -71,17 +92,48 @@ export default function ProfileScreen() {
           <ExternalLink size={20} color="rgba(255,255,255,0.3)" />
         </Pressable>
 
-        <Pressable 
-          onPress={handleSignOut}
-          className="glass p-5 rounded-2xl flex-row items-center justify-between active:scale-[0.98] transition-transform mt-8"
-        >
-          <View className="flex-row items-center gap-4">
-            <View className="w-10 h-10 rounded-full bg-red-500/10 items-center justify-center">
-              <LogOut size={20} color="#ff4444" />
+        {email === 'kuofien@gmail.com' && (
+          <Pressable 
+            onPress={() => router.push('/manage/orders')}
+            className="glass p-5 rounded-2xl flex-row items-center justify-between active:scale-[0.98] transition-transform"
+          >
+            <View className="flex-row items-center gap-4">
+              <View className="w-10 h-10 rounded-full bg-white/10 items-center justify-center">
+                <Package size={20} color="#fff" />
+              </View>
+              <View>
+                <Text className="font-sans text-white text-base">View Print Orders</Text>
+                <Text className="font-sans text-white/50 text-xs">Manage incoming physical print requests</Text>
+              </View>
             </View>
-            <Text className="font-sans text-[#ff4444] text-base">Sign Out</Text>
-          </View>
-        </Pressable>
+          </Pressable>
+        )}
+
+        <View className="mt-8 gap-4">
+          <Pressable 
+            onPress={handleSignOut}
+            className="glass p-5 rounded-2xl flex-row items-center justify-between active:scale-[0.98] transition-transform"
+          >
+            <View className="flex-row items-center gap-4">
+              <View className="w-10 h-10 rounded-full bg-white/10 items-center justify-center">
+                <LogOut size={20} color="#fff" />
+              </View>
+              <Text className="font-sans text-white text-base">Sign Out</Text>
+            </View>
+          </Pressable>
+
+          <Pressable 
+            onPress={handleDeleteAccount}
+            className="glass border border-red-500/20 p-5 rounded-2xl flex-row items-center justify-between active:scale-[0.98] transition-transform"
+          >
+            <View className="flex-row items-center gap-4">
+              <View className="w-10 h-10 rounded-full bg-red-500/10 items-center justify-center">
+                <Trash2 size={20} color="#ff4444" />
+              </View>
+              <Text className="font-sans text-[#ff4444] text-base">Delete Account</Text>
+            </View>
+          </Pressable>
+        </View>
       </View>
     </ScrollView>
   );

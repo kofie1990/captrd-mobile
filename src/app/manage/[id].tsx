@@ -136,8 +136,18 @@ export default function ManageEventScreen() {
               const path = urlParts[1];
               await supabase.storage.from('event-photos').remove([path]);
             }
-            const { error } = await supabase.from('photos').delete().eq('id', photo.id);
-            if (!error) {
+            
+            // Append .select() to verify if the row was actually deleted
+            const { data, error } = await supabase.from('photos').delete().eq('id', photo.id).select();
+            
+            if (error) {
+              Alert.alert('Error', error.message);
+            } else if (!data || data.length === 0) {
+              Alert.alert(
+                'Permission Denied', 
+                'Could not delete the photo. Please ensure your Supabase RLS policies allow deleting from the photos table.'
+              );
+            } else {
               setPhotos(photos.filter(p => p.id !== photo.id));
             }
           }

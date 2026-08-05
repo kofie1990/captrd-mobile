@@ -19,12 +19,12 @@ const { width, height } = Dimensions.get('window');
 
 const GUEST_TIERS = [
   { guests: 3, price: 0, maxPhotos: 5 },
-  { guests: 5, price: 10, maxPhotos: 15 },
-  { guests: 10, price: 20, maxPhotos: 20 },
-  { guests: 15, price: 30, maxPhotos: 25 },
-  { guests: 20, price: 40, maxPhotos: 30 },
-  { guests: 30, price: 60, maxPhotos: 35 },
-  { guests: 50, price: 100, maxPhotos: 40 },
+  { guests: 5, price: 25, maxPhotos: 15 },
+  { guests: 10, price: 35, maxPhotos: 20 },
+  { guests: 15, price: 45, maxPhotos: 25 },
+  { guests: 20, price: 55, maxPhotos: 30 },
+  { guests: 30, price: 75, maxPhotos: 35 },
+  { guests: 50, price: 125, maxPhotos: 40 },
   { guests: 100, price: 150, maxPhotos: 50 },
 ];
 
@@ -284,7 +284,8 @@ export function CreateEventWizard({ userId, onEventCreated, onCancel }: Props) {
                     if (tier.guests === 3) setCustomMaxPhotos('5');
                     else setCustomMaxPhotos(tier.maxPhotos.toString());
                   }}
-                  className={`mx-2 h-16 w-16 items-center justify-center rounded-2xl border ${guestTierIdx === idx ? 'bg-white border-white shadow-lg' : 'bg-transparent border-white/20'}`}
+                  className={`mx-2 h-16 w-16 items-center justify-center rounded-2xl border ${guestTierIdx === idx ? 'bg-white border-white' : 'bg-transparent border-white/20'}`}
+                  style={guestTierIdx === idx ? { shadowColor: '#fff', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 5 } : undefined}
                 >
                   <Text className={`font-mono text-xl ${guestTierIdx === idx ? 'text-black font-bold' : 'text-white/60'}`}>{tier.guests}</Text>
                 </Pressable>
@@ -300,7 +301,7 @@ export function CreateEventWizard({ userId, onEventCreated, onCancel }: Props) {
                   </Text>
                 </View>
                 <Text className="font-serif text-3xl text-white">
-                  {selectedTier.price === 0 ? "Free" : `$${selectedTier.price}`}
+                  {selectedTier.price === 0 ? "Free" : `GH₵${selectedTier.price}`}
                 </Text>
               </View>
 

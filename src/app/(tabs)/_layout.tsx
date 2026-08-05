@@ -39,7 +39,8 @@ export default function TabLayout() {
         name="studio"
         options={{ 
           title: 'Studio',
-          href: isStudioSubscriber ? undefined : null
+          href: isStudioSubscriber ? undefined : null,
+          tabBarItemStyle: { display: isStudioSubscriber ? 'flex' : 'none' }
         }}
       />
       <Tabs.Screen

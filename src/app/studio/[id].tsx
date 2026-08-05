@@ -260,14 +260,13 @@ export default function EventDashboardScreen() {
         ) : (
           <View className="flex-row flex-wrap justify-between">
             {photos.map(photo => (
-              <View key={photo.id} className="relative w-[48%] aspect-square rounded-2xl overflow-hidden bg-white/5 border border-white/10 mb-4">
+              <View key={photo.id} className="w-[48%] aspect-[1/1] mb-4 bg-white/5 border border-white/10 rounded-2xl overflow-hidden relative">
                 <Image 
                   source={{ 
                     uri: Platform.OS === 'android' ? photo.public_url.replace('127.0.0.1', '10.0.2.2').replace('localhost', '10.0.2.2') : photo.public_url 
                   }} 
-                  style={{ width: '100%', height: '100%', position: 'absolute' }}
+                  style={{ width: '100%', height: '100%' }}
                   contentFit="cover"
-                  cachePolicy="memory-disk"
                 />
                 
                 <View className="absolute inset-0 bg-black/20 p-2 justify-between">

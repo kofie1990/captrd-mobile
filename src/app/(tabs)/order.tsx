@@ -1,3 +1,4 @@
+import { LoadingState } from '@/components/ui/LoadingState';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import * as Haptics from 'expo-haptics';
@@ -6,8 +7,7 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ArrowLeft, Book, CheckCircle, ChevronLeft, ChevronRight, Image as ImageIcon, LayoutGrid } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Dimensions, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { LoadingState } from '@/components/ui/LoadingState';
+import { Alert, Dimensions, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -83,13 +83,37 @@ export default function OrderScreen() {
     setFetchingPhotos(false);
   };
 
-  const handlePlaceOrder = () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  const handlePlaceOrder = async () => {
+    if (!user || !selectedEvent) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setSimulatingCheckout(true);
-    setTimeout(() => {
+
+    try {
+      const { error } = await supabase.from('orders').insert({
+        user_id: user.id,
+        event_id: selectedEvent.id,
+        format,
+        finish,
+        shipping_name: shippingName,
+        shipping_address: shippingAddress,
+        shipping_city: shippingCity,
+        shipping_zip: shippingZip,
+        status: 'pending'
+      });
+
+      if (error) {
+        console.error("Error placing order:", error);
+        Alert.alert("Error", "Failed to place order. Please try again.");
+      } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setOrderComplete(true);
+      }
+    } catch (err) {
+      console.error(err);
+      Alert.alert("Error", "An unexpected error occurred.");
+    } finally {
       setSimulatingCheckout(false);
-      setOrderComplete(true);
-    }, 2000);
+    }
   };
 
   const resolveLocalUrl = (url: string | undefined) => {
@@ -219,11 +243,11 @@ export default function OrderScreen() {
                       className="flex-1 bg-[#111] border border-white/10 rounded-xl px-4 py-4 text-white font-sans text-base"
                     />
                     <TextInput
-                      placeholder="ZIP"
+                      placeholder="GPS Address GA-XX.."
                       placeholderTextColor="rgba(255,255,255,0.4)"
                       value={shippingZip}
                       onChangeText={setShippingZip}
-                      className="w-[100px] bg-[#111] border border-white/10 rounded-xl px-4 py-4 text-white font-sans text-base"
+                      className="flex-1 bg-[#111] border border-white/10 rounded-xl px-4 py-4 text-white font-sans text-base"
                     />
                   </View>
                 </View>
@@ -232,7 +256,7 @@ export default function OrderScreen() {
                   <View className="flex-row justify-between items-end mb-6">
                     <View>
                       <Text className="font-mono text-[10px] uppercase tracking-widest text-white/60 mb-1">Total</Text>
-                      <Text className="font-serif text-3xl text-white">$34.99</Text>
+                      <Text className="font-serif text-3xl text-white">GH₵ 399</Text>
                     </View>
                     <Text className="text-sm text-white/60">Free shipping</Text>
                   </View>
@@ -240,12 +264,21 @@ export default function OrderScreen() {
                   <Pressable
                     onPress={handlePlaceOrder}
                     disabled={simulatingCheckout || !shippingName || !shippingAddress || !shippingCity || !shippingZip}
-                    className={`w-full py-4 rounded-full flex-row justify-center items-center ${(simulatingCheckout || !shippingName || !shippingAddress || !shippingCity || !shippingZip) ? 'bg-white/40' : 'bg-white active:scale-95'}`}
                   >
-                    {simulatingCheckout && <LoadingState.Spinner size={16} style={{ marginRight: 8 }} />}
-                    <Text className="text-black font-mono font-bold uppercase tracking-widest text-xs">
-                      {simulatingCheckout ? "Processing..." : "Place Order"}
-                    </Text>
+                    {({ pressed }) => (
+                      <View
+                        className="w-full py-4 rounded-full flex-row justify-center items-center"
+                        style={{
+                          backgroundColor: (simulatingCheckout || !shippingName || !shippingAddress || !shippingCity || !shippingZip) ? 'rgba(255,255,255,0.4)' : '#ffffff',
+                          transform: [{ scale: pressed && !(simulatingCheckout || !shippingName || !shippingAddress || !shippingCity || !shippingZip) ? 0.95 : 1 }]
+                        }}
+                      >
+                        {simulatingCheckout && <LoadingState.Spinner size={16} style={{ marginRight: 8 }} />}
+                        <Text className="text-black font-mono font-bold uppercase tracking-widest text-xs">
+                          {simulatingCheckout ? "Processing..." : "Place Order"}
+                        </Text>
+                      </View>
+                    )}
                   </Pressable>
                 </View>
               </View>

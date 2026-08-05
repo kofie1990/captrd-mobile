@@ -1,16 +1,16 @@
+import { LoadingState } from '@/components/ui/LoadingState';
 import { supabase } from '@/lib/supabase';
+import { FontAwesome5 } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Sharing from 'expo-sharing';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { FontAwesome5 } from '@expo/vector-icons';
-import { ArrowLeft, X as CloseIcon, Download, Play, Share } from 'lucide-react-native';
+import { ArrowLeft, X as CloseIcon, Download, Share } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Alert, Dimensions, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { LoadingState } from '@/components/ui/LoadingState';
 import Animated, {
   Extrapolation,
   FadeIn,
@@ -218,12 +218,25 @@ function LightboxOverlay({ photos, initialIndex, onClose, onShare, onSave, isPro
             </View>
 
             <View style={s.lbActions}>
-              <Pressable onPress={() => onShare(activeMedia)} disabled={isProcessing} style={s.lbActionBtn}>
-                <Share size={22} color="#000" />
-              </Pressable>
-              <Pressable onPress={() => onSave(activeMedia)} disabled={isProcessing} style={s.lbActionBtn}>
-                {isProcessing ? <LoadingState.Spinner size={16} style={{ transform: [{scale: 0.8}] }} /> : <Download size={22} color="#000" />}
-              </Pressable>
+              <View style={s.socialRow}>
+                <Pressable onPress={() => onShare(activeMedia)} disabled={isProcessing} style={[s.lbActionBtn, s.instaBtn]}>
+                  <FontAwesome5 name="instagram" size={18} color="#000" />
+                  <Text style={s.instaText}>Story</Text>
+                </Pressable>
+
+                <Pressable onPress={() => onShare(activeMedia)} disabled={isProcessing} style={s.lbActionBtn}>
+                  <FontAwesome5 name="snapchat-ghost" size={18} color="#fff" />
+                </Pressable>
+              </View>
+
+              <View style={s.defaultActions}>
+                <Pressable onPress={() => onShare(activeMedia)} disabled={isProcessing} style={s.lbActionBtn}>
+                  <Share size={20} color="#fff" />
+                </Pressable>
+                <Pressable onPress={() => onSave(activeMedia)} disabled={isProcessing} style={s.lbActionBtn}>
+                  {isProcessing ? <LoadingState.Spinner size={16} style={{ transform: [{ scale: 0.8 }] }} color="#fff" /> : <Download size={20} color="#fff" />}
+                </Pressable>
+              </View>
             </View>
           </>
         )}
@@ -455,6 +468,10 @@ const s = StyleSheet.create({
   lbInfoCenter: { alignItems: 'center', marginBottom: 16 },
   lbGuestName: { fontFamily: 'PlayfairDisplay_400Regular_Italic', fontSize: 28, color: '#fff', marginBottom: 4 },
   lbTimestamp: { fontFamily: 'Inter_400Regular', fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: 2 },
-  lbActions: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  lbActionBtn: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  lbActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginTop: 8 },
+  socialRow: { flexDirection: 'row', gap: 12 },
+  instaBtn: { width: 'auto', paddingHorizontal: 16, flexDirection: 'row', gap: 8, borderRadius: 18, backgroundColor: '#fff' },
+  instaText: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: '#000' },
+  defaultActions: { flexDirection: 'row', gap: 12 },
+  lbActionBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
 });
