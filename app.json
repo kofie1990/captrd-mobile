@@ -80,7 +80,9 @@
         {
           "widgets": [
             {
-              "name": "CaptrdLiveActivity"
+              "name": "CaptrdLiveActivity",
+              "displayName": "Captrd Roll",
+              "description": "Track your photo roll in real-time"
             }
           ]
         }
