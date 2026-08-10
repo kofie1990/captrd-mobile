@@ -212,11 +212,22 @@ export default function DashboardScreen() {
               <Text className="font-serif text-xl text-white mb-2 text-center">
                 {activeTab === 'created' ? 'No rolls yet' : "You haven't joined any rolls"}
               </Text>
-              <Text className="text-white/60 text-sm font-sans text-center px-4">
+              <Text className="text-white/60 text-sm font-sans text-center px-4 mb-5">
                 {activeTab === 'created'
-                  ? 'Create a roll above to start collecting memories.'
+                  ? 'Start capturing moments with your guests.'
                   : 'Join a roll as a guest to see it here.'}
               </Text>
+              {activeTab === 'created' && (
+                <Pressable
+                  onPress={handleCreateRoll}
+                  className="w-full bg-white py-4 rounded-full flex-row items-center justify-center gap-2 active:scale-95"
+                >
+                  <Plus size={16} color="#000" />
+                  <Text className="font-mono text-xs uppercase tracking-widest font-bold text-black">
+                    Create Your First Roll
+                  </Text>
+                </Pressable>
+              )}
             </View>
           )}
           renderItem={({ item }) => (

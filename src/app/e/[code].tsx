@@ -3,12 +3,14 @@ import { FilmRollGallery } from '@/components/FilmRollGallery';
 import storage from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import * as Haptics from 'expo-haptics';
+import CaptrdLiveActivityFactory from '../../widgets/CaptrdLiveActivity';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LoadingState } from '@/components/ui/LoadingState';
 
 export default function EventPortalScreen() {
@@ -23,6 +25,7 @@ export default function EventPortalScreen() {
   const [showGallery, setShowGallery] = useState(gallery === 'true');
 
   const [latestPhoto, setLatestPhoto] = useState<string | null>(null);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -58,6 +61,20 @@ export default function EventPortalScreen() {
           if (storedName) {
             setGuestName(storedName);
             setHasEnteredName(true);
+            
+            // Re-start or update Live Activity if on iOS
+            if (Platform.OS === 'ios') {
+              try {
+                if (CaptrdLiveActivityFactory.getInstances().length === 0) {
+                  CaptrdLiveActivityFactory.start({
+                    eventName: data.title,
+                    picturesLeft: data.max_photos_per_user || 15
+                  });
+                }
+              } catch (e) {
+                console.error("Failed to start Live Activity", e);
+              }
+            }
           }
         } catch (e) {
           console.error("Failed to fetch guest name from storage", e);
@@ -69,6 +86,18 @@ export default function EventPortalScreen() {
 
     fetchEvent();
   }, [code]);
+  useEffect(() => {
+    return () => {
+      if (Platform.OS === 'ios') {
+        try {
+          const instances = CaptrdLiveActivityFactory.getInstances();
+          instances.forEach(instance => instance.end('default'));
+        } catch (e) {
+          console.error("Failed to clean up Live Activity", e);
+        }
+      }
+    };
+  }, []);
 
   const handleNameSubmit = async () => {
     if (guestName.trim()) {
@@ -76,6 +105,19 @@ export default function EventPortalScreen() {
       try {
         await storage.setItem(`captrd_guest_${eventData.id}`, guestName);
         setHasEnteredName(true);
+
+        if (Platform.OS === 'ios') {
+          try {
+            if (CaptrdLiveActivityFactory.getInstances().length === 0) {
+              CaptrdLiveActivityFactory.start({
+                eventName: eventData.title,
+                picturesLeft: eventData.max_photos_per_user || 15
+              });
+            }
+          } catch (e) {
+            console.error("Failed to start Live Activity", e);
+          }
+        }
 
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
@@ -203,7 +245,8 @@ export default function EventPortalScreen() {
 
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          className="flex-1 justify-end p-6 md:p-12 pb-12"
+          className="flex-1 justify-end p-6 md:p-12"
+          style={{ paddingBottom: Math.max(insets.bottom, 12) + 12 }}
         >
           {/* Back Button */}
           <Pressable
@@ -267,6 +310,7 @@ export default function EventPortalScreen() {
         guestName={guestName}
         filter={eventData.aesthetic_filter}
         isRevealed={isRevealed}
+        eventName={eventData.title}
         latestPhotoUrl={latestPhoto || undefined}
         onViewGallery={() => setShowGallery(true)}
         onPhotoTaken={(url) => setLatestPhoto(url)}

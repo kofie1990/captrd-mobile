@@ -475,7 +475,7 @@ export default function ManageEventScreen() {
                
                <View className="bg-white p-4 rounded-3xl mb-8">
                  <QRCode
-                   value={Linking.createURL(`/e/${eventData.short_code || eventData.id}`)}
+                   value={`https://captrd.live/e/${eventData.short_code || eventData.id}`}
                    size={200}
                    color="#000"
                    backgroundColor="#fff"

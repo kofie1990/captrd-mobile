@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, Dimensions, KeyboardAvoidingView, Platform, Modal, Image as RNImage, Share, Alert } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, Dimensions, KeyboardAvoidingView, Platform, Modal, Image as RNImage, Share, Alert, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { LoadingState } from '@/components/ui/LoadingState';
 import Animated, { FadeIn, FadeOut, SlideInRight, SlideOutLeft, SlideInLeft, SlideOutRight } from 'react-native-reanimated';
 import { ArrowRight, ArrowLeft, CheckCircle2, Upload, Sparkles, Image as ImageIcon, Edit3, X } from 'lucide-react-native';
@@ -524,7 +524,7 @@ export function CreateEventWizard({ userId, onEventCreated, onCancel }: Props) {
           onPress={async () => {
              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
              await Share.share({
-               message: `Join my film roll on Captrd! Code: ${createdEvent.short_code}`,
+               message: `Join my film roll on Captrd: https://captrd.live/e/${createdEvent.short_code}`,
              });
           }}
           className="w-full bg-white py-4 rounded-full items-center mb-4 active:scale-95"
@@ -543,6 +543,7 @@ export function CreateEventWizard({ userId, onEventCreated, onCancel }: Props) {
   }
 
   return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     <View className="flex-1 bg-black pt-16 pb-10">
       <View className="px-8 flex-row justify-between items-center mb-8">
         <Text className="font-serif text-3xl text-white">New Film Roll</Text>
@@ -569,5 +570,6 @@ export function CreateEventWizard({ userId, onEventCreated, onCancel }: Props) {
         </Pressable>
       </View>
     </View>
+    </TouchableWithoutFeedback>
   );
 }

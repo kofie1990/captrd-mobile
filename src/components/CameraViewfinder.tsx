@@ -12,6 +12,7 @@ import { FailedUpload, saveFailedUpload, getFailedUploads, deleteFailedUpload } 
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Dimensions, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, FadeInUp, FadeOutUp, withRepeat, withTiming, Easing } from 'react-native-reanimated';
+import CaptrdLiveActivityFactory from '../../widgets/CaptrdLiveActivity';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
@@ -21,6 +22,7 @@ interface CameraViewfinderProps {
   filter?: string;
   isRevealed: boolean;
   latestPhotoUrl?: string;
+  eventName?: string;
   onViewGallery: () => void;
   onPhotoTaken?: (url: string) => void;
   maxPhotos: number;
@@ -32,6 +34,7 @@ export function CameraViewfinder({
   filter,
   isRevealed,
   latestPhotoUrl: initialLatestPhoto,
+  eventName,
   onViewGallery,
   onPhotoTaken,
   maxPhotos
@@ -63,7 +66,27 @@ export function CameraViewfinder({
       );
     }
     prevPhotoCount.current = photoCount;
-  }, [photoCount, scale]);
+
+    // Update Live Activity
+    if (Platform.OS === 'ios') {
+      try {
+        const instances = CaptrdLiveActivityFactory.getInstances();
+        instances.forEach(instance => {
+          const left = Math.max(0, maxPhotos - photoCount);
+          instance.update({
+            eventName: eventName || 'Captrd Roll',
+            picturesLeft: left
+          });
+          
+          if (left === 0) {
+            instance.end('default');
+          }
+        });
+      } catch (e) {
+        console.error("Failed to update Live Activity", e);
+      }
+    }
+  }, [photoCount, scale, eventName, maxPhotos]);
 
   const animatedStyle = useAnimatedStyle(() => {
     return {

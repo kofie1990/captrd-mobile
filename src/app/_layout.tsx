@@ -18,6 +18,8 @@ import { PurchasesProvider } from '@/hooks/usePurchases';
 
 SplashScreen.preventAutoHideAsync();
 
+import { isClip } from 'react-native-app-clip';
+
 function InitialLayout() {
   const { session, loading } = useAuth();
   const segments = useSegments();
@@ -59,7 +61,10 @@ function InitialLayout() {
       router.replace('/login');
     } else if (session && isAuthOnlyPrevented) {
       // If authenticated and trying to access a public onboarding route, go to dashboard
-      router.replace('/(tabs)/dashboard');
+      // However, if we are in an App Clip, we don't care about the dashboard
+      if (!isClip()) {
+        router.replace('/(tabs)/dashboard');
+      }
     }
   }, [session, loading, loaded, segments]);
 
@@ -72,13 +77,19 @@ function InitialLayout() {
     <ThemeProvider value={DarkTheme}>
       {isAppReady && (
         <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="login" />
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="create" options={{ presentation: 'fullScreenModal' }} />
-          <Stack.Screen name="scan" options={{ presentation: 'fullScreenModal' }} />
-          <Stack.Screen name="e/[code]" />
-          <Stack.Screen name="manage/[id]" />
+          {isClip() ? (
+            <Stack.Screen name="e/[code]" />
+          ) : (
+            <>
+              <Stack.Screen name="index" />
+              <Stack.Screen name="login" />
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="create" options={{ presentation: 'fullScreenModal' }} />
+              <Stack.Screen name="scan" options={{ presentation: 'fullScreenModal' }} />
+              <Stack.Screen name="e/[code]" />
+              <Stack.Screen name="manage/[id]" />
+            </>
+          )}
         </Stack>
       )}
       {(!isAppReady || !isSplashAnimationComplete) && (
