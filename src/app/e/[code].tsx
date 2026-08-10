@@ -3,7 +3,7 @@ import { FilmRollGallery } from '@/components/FilmRollGallery';
 import storage from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import * as Haptics from 'expo-haptics';
-import CaptrdLiveActivityFactory from '../../widgets/CaptrdLiveActivity';
+import CaptrdLiveActivityFactory from '../../../widgets/CaptrdLiveActivity';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
