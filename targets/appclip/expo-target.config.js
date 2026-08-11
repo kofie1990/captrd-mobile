@@ -14,6 +14,7 @@ module.exports = {
     "com.apple.developer.parent-application-identifiers": [
       "$(AppIdentifierPrefix)live.captrd.app"
     ],
+    "com.apple.developer.on-demand-install-capable": true,
     "com.apple.developer.associated-domains": [
       "applinks:captrd.live",
       "appclips:captrd.live"
