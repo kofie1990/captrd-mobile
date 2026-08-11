@@ -3,7 +3,13 @@ import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
+import { isClip } from 'react-native-app-clip';
+
+let AppleAuthentication: any = null;
+if (!isClip()) {
+  AppleAuthentication = require('expo-apple-authentication');
+}
+import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, LogBox, Platform, Pressable, Text, View } from 'react-native';
 import { LoadingState } from '@/components/ui/LoadingState';
 import * as WebBrowser from 'expo-web-browser';
@@ -27,6 +33,49 @@ const redirectUrl = makeRedirectUri();
 export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [appleAuthAvailable, setAppleAuthAvailable] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS === 'ios' && !isClip()) {
+      AppleAuthentication.isAvailableAsync().then(setAppleAuthAvailable);
+    }
+  }, []);
+
+  const handleAppleSignIn = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setLoading(true);
+    setMessage('');
+
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+
+      if (!credential.identityToken) {
+        throw new Error('No identityToken received from Apple Sign-In.');
+      }
+
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: 'apple',
+        token: credential.identityToken,
+      });
+
+      if (error) throw error;
+      
+    } catch (err: any) {
+      if (err.code === 'ERR_REQUEST_CANCELED') {
+        setMessage('Apple Sign-In was cancelled.');
+      } else {
+        console.error('Apple Sign-In error:', err);
+        setMessage(err.message || 'An error occurred during Apple Sign-In.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -105,10 +154,22 @@ export default function LoginScreen() {
         </Text>
 
         <View className="gap-4">
+          {appleAuthAvailable && !isClip() && (
+            <View className="mt-4 shadow-[0_0_20px_rgba(255,255,255,0.2)]">
+              <AppleAuthentication.AppleAuthenticationButton
+                buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                cornerRadius={100}
+                style={{ width: '100%', height: 52 }}
+                onPress={handleAppleSignIn}
+              />
+            </View>
+          )}
+
           <Pressable
             disabled={loading}
             onPress={handleGoogleSignIn}
-            className={`mt-4 bg-white py-4 px-6 flex-row items-center justify-center rounded-full active:scale-[0.98] transition-transform shadow-[0_0_20px_rgba(255,255,255,0.2)] ${loading ? 'opacity-50' : ''}`}
+            className={`${appleAuthAvailable ? 'mt-0' : 'mt-4'} bg-white py-4 px-6 flex-row items-center justify-center rounded-full active:scale-[0.98] transition-transform shadow-[0_0_20px_rgba(255,255,255,0.2)] ${loading ? 'opacity-50' : ''}`}
           >
             {loading ? (
               <LoadingState.Spinner size={16} />

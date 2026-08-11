@@ -1,5 +1,6 @@
 import * as Haptics from 'expo-haptics';
-import LottieView from 'lottie-react-native';
+import { isClip } from 'react-native-app-clip';
+const LottieView = !isClip() ? require('lottie-react-native').default : null;
 import { useEffect, useRef } from 'react';
 import { Dimensions, View } from 'react-native';
 

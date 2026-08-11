@@ -9,9 +9,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LoadingState } from '@/components/ui/LoadingState';
+import { containsProfanity } from '@/lib/moderation';
 
 export default function EventPortalScreen() {
   const { code, gallery } = useLocalSearchParams();
@@ -101,6 +102,10 @@ export default function EventPortalScreen() {
 
   const handleNameSubmit = async () => {
     if (guestName.trim()) {
+      if (containsProfanity(guestName)) {
+        Alert.alert("Invalid Name", "Please choose a different name to join this event.");
+        return;
+      }
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       try {
         await storage.setItem(`captrd_guest_${eventData.id}`, guestName);

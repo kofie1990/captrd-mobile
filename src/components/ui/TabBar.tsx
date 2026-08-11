@@ -3,7 +3,7 @@ import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Aperture, Compass, PackageOpen, Plus, UserCircle } from 'lucide-react-native';
+import { Aperture, Compass, PackageOpen, Plus, UserCircle, LayoutDashboard } from 'lucide-react-native';
 import React from 'react';
 import { Dimensions, Pressable, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withSpring, withTiming } from 'react-native-reanimated';

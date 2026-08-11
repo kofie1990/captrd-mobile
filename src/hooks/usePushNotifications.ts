@@ -27,7 +27,7 @@ export function usePushNotifications() {
           shouldShowAlert: true,
           shouldPlaySound: true,
           shouldSetBadge: false,
-        }),
+        } as any),
       });
 
       const token = await registerForPushNotificationsAsync(Notifications);

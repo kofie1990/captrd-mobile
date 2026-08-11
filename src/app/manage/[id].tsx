@@ -6,7 +6,7 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { AlertTriangle, ArrowLeft, Image as ImageIcon, Trash2, Unlock, UploadCloud, Users, QrCode, X, Share } from 'lucide-react-native';
+import { AlertTriangle, ArrowLeft, Image as ImageIcon, Trash2, Unlock, UploadCloud, Users, QrCode, X, Share, MoreHorizontal } from 'lucide-react-native';
 import { useEffect, useState, useRef } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View, Modal } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
@@ -14,6 +14,9 @@ import * as Linking from 'expo-linking';
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
 import { LoadingState } from '@/components/ui/LoadingState';
+import { UserActionSheet } from '@/components/UserActionSheet';
+import { ReportModal } from '@/components/ReportModal';
+import { reportUser, blockUser } from '@/lib/moderation';
 
 const FILTER_PREVIEWS: Record<string, string> = {
   none: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80",
@@ -49,6 +52,15 @@ export default function ManageEventScreen() {
   const [qrColor, setQrColor] = useState(QR_COLORS[0]);
   const [qrGradient, setQrGradient] = useState(QR_GRADIENTS[0]);
   const qrRef = useRef(null);
+
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [actionSheetVisible, setActionSheetVisible] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<{ id: string, name: string } | null>(null);
+
+  const handleReportSubmit = async (reason: string, details: string) => {
+    if (!selectedUser) return;
+    await reportUser(selectedUser.id, reason, details);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -226,10 +238,13 @@ export default function ManageEventScreen() {
   }
 
   const isRevealed = new Date() >= new Date(eventData.reveal_at);
-  const guestStats = photos.reduce((acc: Record<string, number>, photo) => {
-    acc[photo.guest_name] = (acc[photo.guest_name] || 0) + 1;
+  const guestStats = photos.reduce((acc: Record<string, { name: string; count: number }>, photo) => {
+    if (!acc[photo.user_id]) {
+      acc[photo.user_id] = { name: photo.guest_name, count: 0 };
+    }
+    acc[photo.user_id].count += 1;
     return acc;
-  }, {} as Record<string, number>);
+  }, {});
   const uniqueGuests = Object.keys(guestStats).length;
 
   return (
@@ -383,11 +398,19 @@ export default function ManageEventScreen() {
               </View>
             </View>
 
-            {Object.entries(guestStats).map(([name, count], index) => (
-              <View key={index} className="flex-row justify-between items-center py-3 border-b border-white/5">
-                <Text className="font-serif italic text-lg text-white">{name}</Text>
-                <View className="bg-white/10 px-3 py-1 rounded-full">
-                  <Text className="font-mono text-[10px] text-white/70">{String(count)} photos</Text>
+            {Object.entries(guestStats).map(([userId, info]: [string, any]) => (
+              <View key={userId} className="flex-row justify-between items-center py-3 border-b border-white/5">
+                <Text className="font-serif italic text-lg text-white">{info.name}</Text>
+                <View className="flex-row items-center gap-3">
+                  <View className="bg-white/10 px-3 py-1 rounded-full">
+                    <Text className="font-mono text-[10px] text-white/70">{String(info.count)} photos</Text>
+                  </View>
+                  <Pressable onPress={() => {
+                    setSelectedUser({ id: userId, name: info.name });
+                    setActionSheetVisible(true);
+                  }}>
+                    <MoreHorizontal size={20} color="rgba(255,255,255,0.5)" />
+                  </Pressable>
                 </View>
               </View>
             ))}
@@ -459,9 +482,9 @@ export default function ManageEventScreen() {
                  contentFit="cover"
                />
              )}
-             {qrBgStyle === 'gradient' && (
+              {qrBgStyle === 'gradient' && (
                <LinearGradient
-                 colors={qrGradient}
+                 colors={qrGradient as any}
                  style={{ position: 'absolute', width: '100%', height: '100%' }}
                />
              )}
@@ -521,7 +544,7 @@ export default function ManageEventScreen() {
                   onPress={() => setQrGradient(g)}
                   className={`w-10 h-10 rounded-full border-2 overflow-hidden ${qrGradient === g ? 'border-white' : 'border-transparent'}`}
                 >
-                  <LinearGradient colors={g} style={{ width: '100%', height: '100%' }} />
+                  <LinearGradient colors={g as any} style={{ width: '100%', height: '100%' }} />
                 </Pressable>
               ))}
             </ScrollView>
@@ -533,6 +556,29 @@ export default function ManageEventScreen() {
           </Pressable>
         </View>
       </Modal>
+
+      <ReportModal
+        visible={reportModalVisible}
+        onClose={() => setReportModalVisible(false)}
+        onSubmit={handleReportSubmit}
+      />
+
+      {selectedUser && (
+        <UserActionSheet
+          visible={actionSheetVisible}
+          onClose={() => setActionSheetVisible(false)}
+          guestName={selectedUser.name}
+          guestId={selectedUser.id}
+          onReport={() => {
+            setActionSheetVisible(false);
+            setTimeout(() => setReportModalVisible(true), 300);
+          }}
+          onBlockSuccess={() => {
+            // Optional: refresh if we want to filter blocked users
+            // but admin might still want to see all event photos
+          }}
+        />
+      )}
     </View>
   );
 }

@@ -11,7 +11,7 @@ interface InviteCaptureViewProps {
   shortCode: string;
 }
 
-export const InviteCaptureView = forwardRef<ViewShot, InviteCaptureViewProps>(
+export const InviteCaptureView = forwardRef<any, InviteCaptureViewProps>(
   ({ title, dateStr, inviteDetails, coverPhotoUrl, shortCode }, ref) => {
     // Determine the cover URL (handle local IP mapping for android if needed)
     const coverUrl = Platform.OS === 'android' && coverPhotoUrl 

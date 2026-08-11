@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Dimensions, StyleSheet } from 'react-native';
-import LottieView from 'lottie-react-native';
+import { isClip } from 'react-native-app-clip';
+const LottieView = !isClip() ? require('lottie-react-native').default : null;
 import { Skeleton } from 'moti/skeleton';
 
 const { width } = Dimensions.get('window');
@@ -12,12 +13,14 @@ const ITEM_WIDTH = (width - GAP * (COLUMN_COUNT + 1)) / COLUMN_COUNT;
 export const LoadingSpinner = ({ size = 48, style }: { size?: number, style?: any }) => {
   return (
     <View style={[{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }, style]}>
-      <LottieView
-        source={require('../../../assets/images/logo.json')}
-        autoPlay
-        loop
-        style={{ width: '100%', height: '100%' }}
-      />
+      {!isClip() ? (
+        <LottieView
+          source={require('../../../assets/images/logo.json')}
+          autoPlay
+          loop
+          style={{ width: '100%', height: '100%' }}
+        />
+      ) : null}
     </View>
   );
 };

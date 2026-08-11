@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, Pressable, Alert, Linking } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { LogOut, Trash2, User as UserIcon, Wand2, ExternalLink, Package } from 'lucide-react-native';
+import { LogOut, Trash2, User as UserIcon, Wand2, ExternalLink, Package, Mail } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'expo-router';
@@ -108,6 +108,21 @@ export default function ProfileScreen() {
             </View>
           </Pressable>
         )}
+
+        <Pressable 
+          onPress={() => Linking.openURL('mailto:kuofien@gmail.com')}
+          className="glass p-5 rounded-2xl flex-row items-center justify-between active:scale-[0.98] transition-transform mt-4"
+        >
+          <View className="flex-row items-center gap-4">
+            <View className="w-10 h-10 rounded-full bg-white/10 items-center justify-center">
+              <Mail size={20} color="#fff" />
+            </View>
+            <View>
+              <Text className="font-sans text-white text-base">Contact Support</Text>
+              <Text className="font-sans text-white/50 text-xs">Get help or report an issue</Text>
+            </View>
+          </View>
+        </Pressable>
 
         <View className="mt-8 gap-4">
           <Pressable 

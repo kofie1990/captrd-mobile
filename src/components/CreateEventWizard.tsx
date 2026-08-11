@@ -15,7 +15,12 @@ import { BlurView } from 'expo-blur';
 import { format } from 'date-fns';
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePurchases } from '@/hooks/usePurchases';
-import Purchases from 'react-native-purchases';
+import { isClip } from 'react-native-app-clip';
+
+let Purchases: any = null;
+if (!isClip()) {
+  Purchases = require('react-native-purchases').default;
+}
 
 const { width, height } = Dimensions.get('window');
 
@@ -142,7 +147,11 @@ export function CreateEventWizard({ userId, onEventCreated, onCancel }: Props) {
       }
 
       try {
-        await Purchases.purchasePackage(packageToBuy);
+        if (Purchases) {
+          await Purchases.purchasePackage(packageToBuy);
+        } else {
+          throw new Error('Purchases not available');
+        }
       } catch (error: any) {
         if (!error.userCancelled) {
           Alert.alert("Purchase Failed", error.message || "There was an error processing your transaction.");

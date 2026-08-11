@@ -9,16 +9,20 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { useFonts } from 'expo-font';
 import { Inter_400Regular, Inter_700Bold } from '@expo-google-fonts/inter';
 import { PlayfairDisplay_400Regular, PlayfairDisplay_400Regular_Italic } from '@expo-google-fonts/playfair-display';
-import * as SplashScreen from 'expo-splash-screen';
+
 import { useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { CustomSplashScreen } from '@/components/CustomSplashScreen';
 import { PurchasesProvider } from '@/hooks/usePurchases';
 
-SplashScreen.preventAutoHideAsync();
-
 import { isClip } from 'react-native-app-clip';
+
+let SplashScreen: any;
+if (!isClip()) {
+  SplashScreen = require('expo-splash-screen');
+  SplashScreen.preventAutoHideAsync();
+}
 
 function InitialLayout() {
   const { session, loading } = useAuth();
@@ -26,7 +30,7 @@ function InitialLayout() {
   const router = useRouter();
 
   const [isAppReady, setIsAppReady] = useState(false);
-  const [isSplashAnimationComplete, setIsSplashAnimationComplete] = useState(false);
+  const [isSplashAnimationComplete, setIsSplashAnimationComplete] = useState(isClip());
 
   // Initialize push notifications
   usePushNotifications();
@@ -70,7 +74,9 @@ function InitialLayout() {
 
   useEffect(() => {
     // Hide native splash screen quickly, our custom one is already rendering
-    SplashScreen.hideAsync();
+    if (!isClip()) {
+      SplashScreen.hideAsync();
+    }
   }, []);
 
   return (

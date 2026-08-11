@@ -7,8 +7,11 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Sharing from 'expo-sharing';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { ArrowLeft, X as CloseIcon, Download, Share } from 'lucide-react-native';
+import { ArrowLeft, X as CloseIcon, Download, Share, AlertTriangle, MoreHorizontal } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
+import { ReportModal } from './ReportModal';
+import { UserActionSheet } from './UserActionSheet';
+import { reportPhoto, getBlockedUsers } from '@/lib/moderation';
 import { Alert, Dimensions, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -72,13 +75,13 @@ function ZoomableImage({ url }: { url: string }) {
       { translateX: translateX.value },
       { translateY: translateY.value },
       { scale: scale.value }
-    ]
+    ] as any
   }));
 
   return (
     <GestureDetector gesture={composed}>
       <Animated.View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <AnimatedImage source={{ uri: url }} style={[{ width: '100%', height: '100%' }, style]} contentFit="cover" />
+        <AnimatedImage source={{ uri: url }} style={[{ width: '100%', height: '100%' }, style as any]} contentFit="cover" />
       </Animated.View>
     </GestureDetector>
   );
@@ -113,7 +116,7 @@ function GalleryVideoItem({ url, isPlaying, style, isMuted = false }: { url: str
 }
 
 // ─── Lightbox Component ───────────────────────────────────────────────────
-function LightboxOverlay({ photos, initialIndex, onClose, onShare, onSave, isProcessing }: any) {
+function LightboxOverlay({ photos, initialIndex, onClose, onShare, onSave, isProcessing, onReportPress, onMorePress }: any) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
 
   const translateY = useSharedValue(0);
@@ -211,7 +214,10 @@ function LightboxOverlay({ photos, initialIndex, onClose, onShare, onSave, isPro
         {activeMedia && (
           <>
             <View style={s.lbInfoCenter}>
-              <Text style={s.lbGuestName}>{activeMedia.guest_name}</Text>
+              <Pressable onPress={() => onMorePress(activeMedia)} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Text style={s.lbGuestName}>{activeMedia.guest_name}</Text>
+                <MoreHorizontal size={20} color="rgba(255,255,255,0.5)" />
+              </Pressable>
               <Text style={s.lbTimestamp}>
                 {new Date(activeMedia.created_at).toLocaleTimeString()}
               </Text>
@@ -230,11 +236,14 @@ function LightboxOverlay({ photos, initialIndex, onClose, onShare, onSave, isPro
               </View>
 
               <View style={s.defaultActions}>
+                <Pressable onPress={() => onReportPress(activeMedia)} style={s.lbActionBtn}>
+                  <AlertTriangle size={20} color="#eab308" />
+                </Pressable>
                 <Pressable onPress={() => onShare(activeMedia)} disabled={isProcessing} style={s.lbActionBtn}>
                   <Share size={20} color="#fff" />
                 </Pressable>
                 <Pressable onPress={() => onSave(activeMedia)} disabled={isProcessing} style={s.lbActionBtn}>
-                  {isProcessing ? <LoadingState.Spinner size={16} style={{ transform: [{ scale: 0.8 }] }} color="#fff" /> : <Download size={20} color="#fff" />}
+                  {isProcessing ? <LoadingState.Spinner size={16} /> : <Download size={20} color="#fff" />}
                 </Pressable>
               </View>
             </View>
@@ -253,19 +262,47 @@ export function FilmRollGallery({ eventData, onViewCamera }: FilmRollGalleryProp
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [actionSheetVisible, setActionSheetVisible] = useState(false);
+  const [selectedMedia, setSelectedMedia] = useState<any>(null);
 
-  useEffect(() => {
-    const fetchPhotos = async () => {
+  const fetchPhotos = async () => {
+    try {
+      const blockedIds = await getBlockedUsers();
+      
       const { data } = await supabase
         .from('photos')
         .select('*')
         .eq('event_id', eventData.id)
         .order('created_at', { ascending: false });
-      if (data) setPhotos(data);
+        
+      if (data) {
+        // Filter out photos from blocked users
+        const filteredPhotos = data.filter(p => !blockedIds.includes(p.user_id));
+        setPhotos(filteredPhotos);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
       setLoading(false);
-    };
+    }
+  };
+
+  useEffect(() => {
     fetchPhotos();
   }, [eventData.id]);
+
+  const handleReportSubmit = async (reason: string, details: string) => {
+    if (!selectedMedia) return;
+    await reportPhoto(selectedMedia.id, selectedMedia.user_id, reason, details);
+  };
+
+  const handleBlockSuccess = () => {
+    setSelectedIndex(null);
+    setLoading(true);
+    fetchPhotos();
+  };
 
   const downloadToCache = async (url: string) => {
     const filename = url.split('/').pop() || `moment_${Date.now()}.jpg`;
@@ -427,6 +464,34 @@ export function FilmRollGallery({ eventData, onViewCamera }: FilmRollGalleryProp
           onShare={handleShareToApp}
           onSave={handleSave}
           isProcessing={isProcessing}
+          onReportPress={(media: any) => {
+            setSelectedMedia(media);
+            setReportModalVisible(true);
+          }}
+          onMorePress={(media: any) => {
+            setSelectedMedia(media);
+            setActionSheetVisible(true);
+          }}
+        />
+      )}
+      
+      <ReportModal
+        visible={reportModalVisible}
+        onClose={() => setReportModalVisible(false)}
+        onSubmit={handleReportSubmit}
+      />
+
+      {selectedMedia && (
+        <UserActionSheet
+          visible={actionSheetVisible}
+          onClose={() => setActionSheetVisible(false)}
+          guestName={selectedMedia.guest_name}
+          guestId={selectedMedia.user_id}
+          onReport={() => {
+            setActionSheetVisible(false);
+            setTimeout(() => setReportModalVisible(true), 300);
+          }}
+          onBlockSuccess={handleBlockSuccess}
         />
       )}
     </View>
