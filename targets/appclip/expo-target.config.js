@@ -1,7 +1,7 @@
 /** @type {import('@bacons/apple-targets/app.plugin').ConfigItem} */
 module.exports = {
   type: "clip",
-  name: "Captrd App Clip",
+  name: "CaptrdAppClip",
   bundleIdentifier: "live.captrd.app.appclip",
   deploymentTarget: "16.4",
   frameworks: ["SwiftUI", "AVFoundation", "ActivityKit"],
