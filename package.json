@@ -79,5 +79,8 @@
     "web": "expo start --web",
     "lint": "expo lint"
   },
+  "overrides": {
+    "typescript": "~6.0.3"
+  },
   "private": true
 }
