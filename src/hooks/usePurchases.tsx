@@ -1,12 +1,7 @@
 import { useEffect, useState, createContext, useContext, ReactNode } from 'react';
 import { Platform } from 'react-native';
 import type { CustomerInfo, PurchasesOffering } from 'react-native-purchases';
-import { isClip } from 'react-native-app-clip';
-
-let Purchases: any = null;
-if (!isClip()) {
-  Purchases = require('react-native-purchases').default;
-}
+import Purchases from 'react-native-purchases';
 import { useAuth } from './useAuth';
 
 // Use API keys from .env
@@ -35,10 +30,7 @@ export const PurchasesProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const initPurchases = async () => {
-      if (isClip()) {
-        setIsReady(true);
-        return;
-      }
+
       try {
         if (Platform.OS === 'ios' && APIKeys.apple) {
           Purchases.configure({ apiKey: APIKeys.apple, appUserID: session?.user?.id });

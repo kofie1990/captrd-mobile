@@ -3,12 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
-import { isClip } from 'react-native-app-clip';
-
-let AppleAuthentication: any = null;
-if (!isClip()) {
-  AppleAuthentication = require('expo-apple-authentication');
-}
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, LogBox, Platform, Pressable, Text, View } from 'react-native';
 import { LoadingState } from '@/components/ui/LoadingState';
@@ -36,7 +31,7 @@ export default function LoginScreen() {
   const [appleAuthAvailable, setAppleAuthAvailable] = useState(false);
 
   useEffect(() => {
-    if (Platform.OS === 'ios' && !isClip()) {
+    if (Platform.OS === 'ios') {
       AppleAuthentication.isAvailableAsync().then(setAppleAuthAvailable);
     }
   }, []);
@@ -154,7 +149,7 @@ export default function LoginScreen() {
         </Text>
 
         <View className="gap-4">
-          {appleAuthAvailable && !isClip() && (
+          {appleAuthAvailable && (
             <View className="mt-4 shadow-[0_0_20px_rgba(255,255,255,0.2)]">
               <AppleAuthentication.AppleAuthenticationButton
                 buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}

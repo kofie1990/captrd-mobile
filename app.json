@@ -8,6 +8,7 @@
     "scheme": "captrd",
     "userInterfaceStyle": "automatic",
     "ios": {
+      "appleTeamId": "7TXV7D2XYZ",
       "supportsTablet": false,
       "usesAppleSignIn": true,
       "privacyManifests": {
@@ -128,27 +129,7 @@
           "color": "#208AEF"
         }
       ],
-      [
-        "react-native-app-clip",
-        {
-          "name": "Captrd App Clip",
-          "deploymentTarget": "16.4",
-          "excludedPackages": [
-            "expo-blur",
-            "expo-image-picker",
-            "expo-web-browser",
-            "expo-glass-effect",
-            "expo-symbols",
-            "react-native-qrcode-svg",
-            "react-native-view-shot",
-            "@lottiefiles/dotlottie-react",
-            "lottie-react-native",
-            "react-native-purchases",
-            "expo-apple-authentication",
-            "expo-splash-screen"
-          ]
-        }
-      ],
+      "@bacons/apple-targets",
       [
         "expo-widgets",
         {

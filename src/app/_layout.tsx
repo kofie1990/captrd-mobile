@@ -15,14 +15,9 @@ import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { CustomSplashScreen } from '@/components/CustomSplashScreen';
 import { PurchasesProvider } from '@/hooks/usePurchases';
+import * as SplashScreen from 'expo-splash-screen';
 
-import { isClip } from 'react-native-app-clip';
-
-let SplashScreen: any;
-if (!isClip()) {
-  SplashScreen = require('expo-splash-screen');
-  SplashScreen.preventAutoHideAsync();
-}
+SplashScreen.preventAutoHideAsync();
 
 function InitialLayout() {
   const { session, loading } = useAuth();
@@ -30,7 +25,7 @@ function InitialLayout() {
   const router = useRouter();
 
   const [isAppReady, setIsAppReady] = useState(false);
-  const [isSplashAnimationComplete, setIsSplashAnimationComplete] = useState(isClip());
+  const [isSplashAnimationComplete, setIsSplashAnimationComplete] = useState(false);
 
   // Initialize push notifications
   usePushNotifications();
@@ -65,37 +60,26 @@ function InitialLayout() {
       router.replace('/login');
     } else if (session && isAuthOnlyPrevented) {
       // If authenticated and trying to access a public onboarding route, go to dashboard
-      // However, if we are in an App Clip, we don't care about the dashboard
-      if (!isClip()) {
-        router.replace('/(tabs)/dashboard');
-      }
+      router.replace('/(tabs)/dashboard');
     }
   }, [session, loading, loaded, segments]);
 
   useEffect(() => {
     // Hide native splash screen quickly, our custom one is already rendering
-    if (!isClip()) {
-      SplashScreen.hideAsync();
-    }
+    SplashScreen.hideAsync();
   }, []);
 
   return (
     <ThemeProvider value={DarkTheme}>
       {isAppReady && (
         <Stack screenOptions={{ headerShown: false }}>
-          {isClip() ? (
-            <Stack.Screen name="e/[code]" />
-          ) : (
-            <>
-              <Stack.Screen name="index" />
-              <Stack.Screen name="login" />
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="create" options={{ presentation: 'fullScreenModal' }} />
-              <Stack.Screen name="scan" options={{ presentation: 'fullScreenModal' }} />
-              <Stack.Screen name="e/[code]" />
-              <Stack.Screen name="manage/[id]" />
-            </>
-          )}
+          <Stack.Screen name="index" />
+          <Stack.Screen name="login" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="create" options={{ presentation: 'fullScreenModal' }} />
+          <Stack.Screen name="scan" options={{ presentation: 'fullScreenModal' }} />
+          <Stack.Screen name="e/[code]" />
+          <Stack.Screen name="manage/[id]" />
         </Stack>
       )}
       {(!isAppReady || !isSplashAnimationComplete) && (
