@@ -66,6 +66,11 @@
         ]
       },
       "bundleIdentifier": "live.captrd.app",
+      "entitlements": {
+        "com.apple.developer.associated-appclip-app-identifiers": [
+          "$(AppIdentifierPrefix)live.captrd.app.appclip"
+        ]
+      },
       "associatedDomains": [
         "applinks:captrd.live",
         "appclips:captrd.live"
