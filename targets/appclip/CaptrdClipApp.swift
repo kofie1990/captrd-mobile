@@ -14,7 +14,7 @@ struct CaptrdClipApp: App {
     
     func handleUserActivity(_ userActivity: NSUserActivity) {
         guard let incomingURL = userActivity.webpageURL,
-              let components = URLComponents(url: incomingURL, resolvingAgainstBaseURL: true) else {
+              let _ = URLComponents(url: incomingURL, resolvingAgainstBaseURL: true) else {
             return
         }
         

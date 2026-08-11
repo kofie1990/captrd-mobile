@@ -4,6 +4,7 @@ module.exports = {
   name: "CaptrdAppClip",
   bundleIdentifier: "live.captrd.app.appclip",
   icon: "../../assets/images/icon.png",
+  exportJs: false,
   deploymentTarget: "16.4",
   frameworks: ["SwiftUI", "AVFoundation", "ActivityKit"],
   colors: {
