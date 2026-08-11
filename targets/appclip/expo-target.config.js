@@ -2,6 +2,7 @@
 module.exports = {
   type: "clip",
   name: "Captrd App Clip",
+  bundleIdentifier: "live.captrd.app.appclip",
   deploymentTarget: "16.4",
   frameworks: ["SwiftUI", "AVFoundation", "ActivityKit"],
   colors: {
