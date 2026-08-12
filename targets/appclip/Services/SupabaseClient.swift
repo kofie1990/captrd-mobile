@@ -73,5 +73,89 @@ class SupabaseClient {
         }.resume()
     }
     
-    // Additional methods for fetching photos, uploading photos, joining event
+    func fetchPhotos(for eventId: String, completion: @escaping (Result<[Photo], Error>) -> Void) {
+        let endpoint = "/rest/v1/photos?event_id=eq.\(eventId)&order=created_at.desc"
+        let request = makeRequest(endpoint: endpoint)
+        
+        session.dataTask(with: request) { data, response, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            guard let data = data else {
+                completion(.failure(NSError(domain: "SupabaseClient", code: 0, userInfo: [NSLocalizedDescriptionKey: "No data"])))
+                return
+            }
+            do {
+                let photos = try self.decoder.decode([Photo].self, from: data)
+                completion(.success(photos))
+            } catch {
+                completion(.failure(error))
+            }
+        }.resume()
+    }
+    
+    func uploadPhoto(data: Data, eventId: String, guestName: String, completion: @escaping (Result<String, Error>) -> Void) {
+        let fileName = "\(eventId)/\(Int(Date().timeIntervalSince1970))_\(UUID().uuidString.prefix(6)).jpg"
+        let endpoint = "/storage/v1/object/event-photos/\(fileName)"
+        
+        var request = makeRequest(endpoint: endpoint, method: "POST", body: data)
+        request.setValue("image/jpeg", forHTTPHeaderField: "Content-Type")
+        
+        session.dataTask(with: request) { responseData, response, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            
+            if let httpResponse = response as? HTTPURLResponse, !(200...299).contains(httpResponse.statusCode) {
+                completion(.failure(NSError(domain: "SupabaseClient", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "Upload failed"])))
+                return
+            }
+            
+            // Construct the public URL
+            let publicUrl = "\(Config.supabaseUrl)/storage/v1/object/public/event-photos/\(fileName)"
+            
+            // Insert into the database
+            self.insertPhotoRecord(eventId: eventId, guestName: guestName, storagePath: publicUrl) { result in
+                switch result {
+                case .success():
+                    completion(.success(publicUrl))
+                case .failure(let error):
+                    completion(.failure(error))
+                }
+            }
+        }.resume()
+    }
+    
+    private func insertPhotoRecord(eventId: String, guestName: String, storagePath: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        let endpoint = "/rest/v1/photos"
+        let bodyDict: [String: Any] = [
+            "event_id": eventId,
+            "guest_name": guestName,
+            "storage_path": storagePath,
+            "media_type": "image"
+        ]
+        
+        do {
+            let bodyData = try JSONSerialization.data(withJSONObject: bodyDict, options: [])
+            let request = makeRequest(endpoint: endpoint, method: "POST", body: bodyData)
+            
+            session.dataTask(with: request) { data, response, error in
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+                
+                if let httpResponse = response as? HTTPURLResponse, !(200...299).contains(httpResponse.statusCode) {
+                    completion(.failure(NSError(domain: "SupabaseClient", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "Database insert failed"])))
+                    return
+                }
+                
+                completion(.success(()))
+            }.resume()
+        } catch {
+            completion(.failure(error))
+        }
+    }
 }
