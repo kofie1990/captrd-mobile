@@ -69,7 +69,7 @@ struct CameraView: View {
                                 .foregroundColor(Color.white.opacity(0.7))
                                 .tracking(2)
                             
-                            Text("\(photosCount) / \(event.max_pictures_per_user ?? 10) EXPOSURES")
+                            Text("\(photosCount) / \(event.max_photos_per_user ?? 10) EXPOSURES")
                                 .font(.system(size: 9))
                                 .foregroundColor(Color.white.opacity(0.4))
                                 .tracking(2)
