@@ -8,8 +8,7 @@ struct ContentView: View {
             Color.black.ignoresSafeArea()
             
             if appState.isFetching {
-                ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                SkeletonLoadingView()
             } else if let error = appState.error {
                 VStack(spacing: 16) {
                     Image(systemName: "exclamationmark.triangle")
@@ -41,6 +40,54 @@ struct ContentView: View {
                     Text("Scan a Captrd QR code to join an event.")
                         .foregroundColor(.gray)
                         .multilineTextAlignment(.center)
+                }
+            }
+        }
+    }
+}
+
+struct SkeletonLoadingView: View {
+    @State private var opacity: Double = 0.5
+    
+    var body: some View {
+        ZStack {
+            Color(red: 9/255, green: 9/255, blue: 11/255).ignoresSafeArea()
+            
+            VStack(alignment: .leading, spacing: 0) {
+                // Header Skeleton
+                VStack(alignment: .leading, spacing: 12) {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color(red: 28/255, green: 28/255, blue: 30/255))
+                        .frame(width: 150, height: 20)
+                    
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(red: 28/255, green: 28/255, blue: 30/255))
+                        .frame(width: 250, height: 40)
+                }
+                .padding(.bottom, 32)
+                .padding(.horizontal, 24)
+                .padding(.top, 80)
+                
+                // Cards Skeleton
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 20) {
+                        RoundedRectangle(cornerRadius: 24)
+                            .fill(Color(red: 28/255, green: 28/255, blue: 30/255))
+                            .frame(width: 280, height: 380)
+                        
+                        RoundedRectangle(cornerRadius: 24)
+                            .fill(Color(red: 28/255, green: 28/255, blue: 30/255))
+                            .frame(width: 280, height: 380)
+                    }
+                    .padding(.horizontal, 24)
+                }
+                
+                Spacer()
+            }
+            .opacity(opacity)
+            .onAppear {
+                withAnimation(Animation.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                    opacity = 1.0
                 }
             }
         }
