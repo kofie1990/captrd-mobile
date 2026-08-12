@@ -7,54 +7,170 @@ struct GalleryView: View {
     @State private var isLoading = true
     @State private var selectedPhotoIndex: Int? = nil
     
-    let columns = [
-        GridItem(.flexible()),
-        GridItem(.flexible()),
-        GridItem(.flexible())
-    ]
+    // For Masonry layout
+    private var leftColumnPhotos: [(Int, Photo)] {
+        photos.enumerated().filter { $0.offset % 2 == 0 }.map { ($0.offset, $0.element) }
+    }
+    private var rightColumnPhotos: [(Int, Photo)] {
+        photos.enumerated().filter { $0.offset % 2 != 0 }.map { ($0.offset, $0.element) }
+    }
     
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            Color(red: 9/255, green: 9/255, blue: 11/255).ignoresSafeArea()
             
-            VStack {
-                Text("Photo Gallery")
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(.white)
-                    .padding(.top, 20)
-                
-                if isLoading {
-                    Spacer()
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                    Spacer()
-                } else if photos.isEmpty {
-                    Spacer()
-                    Text("No photos yet.")
-                        .foregroundColor(.gray)
-                    Spacer()
-                } else {
-                    ScrollView {
-                        LazyVGrid(columns: columns, spacing: 2) {
-                            ForEach(Array(photos.enumerated()), id: \.element.id) { index, photo in
-                                AsyncImage(url: URL(string: photo.storage_path)) { phase in
-                                    if let image = phase.image {
-                                        image
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fill)
-                                    } else {
-                                        Color.gray.opacity(0.3)
-                                    }
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 0) {
+                    // Hero Section
+                    ZStack(alignment: .bottom) {
+                        if let coverUrl = event.cover_photo_url, let url = URL(string: coverUrl) {
+                            AsyncImage(url: url) { phase in
+                                if let image = phase.image {
+                                    image.resizable().aspectRatio(contentMode: .fill)
+                                } else {
+                                    Color(red: 17/255, green: 17/255, blue: 17/255)
                                 }
-                                .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
-                                .aspectRatio(1, contentMode: .fill)
-                                .clipped()
-                                .onTapGesture {
-                                    selectedPhotoIndex = index
+                            }
+                            .frame(height: 350)
+                            .clipped()
+                        } else {
+                            Color(red: 17/255, green: 17/255, blue: 17/255)
+                                .frame(height: 350)
+                        }
+                        
+                        LinearGradient(
+                            colors: [.clear, Color(red: 9/255, green: 9/255, blue: 11/255, opacity: 0.6), Color(red: 9/255, green: 9/255, blue: 11/255)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .frame(height: 200)
+                        
+                        // Back Button placeholder (if needed, but MainTabView handles tabs)
+                        // If they wanted a back button, we can add it here.
+                        /*
+                        HStack {
+                            Button(action: {}) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "arrow.left")
+                                        .font(.system(size: 16))
+                                    Text("CAMERA")
+                                        .font(.system(size: 11, weight: .bold))
+                                        .tracking(2)
+                                }
+                                .foregroundColor(.white)
+                                .opacity(0.6)
+                            }
+                            Spacer()
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 250)
+                        */
+                    }
+                    .frame(height: 350)
+                    
+                    // Title Section
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(event.title)
+                            .font(.system(size: 48, weight: .regular, design: .serif))
+                            .foregroundColor(Color(red: 252/255, green: 252/255, blue: 252/255))
+                            .tracking(-1)
+                        
+                        Text("THE FILM ROLL IS DEVELOPED")
+                            .font(.system(size: 10, weight: .regular))
+                            .foregroundColor(Color.white.opacity(0.8))
+                            .tracking(3)
+                            .padding(.bottom, 24)
+                        
+                        HStack(alignment: .center) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("\(photos.count)")
+                                    .font(.system(size: 32, weight: .regular, design: .serif))
+                                    .foregroundColor(.white)
+                                Text("TOTAL PICTURES")
+                                    .font(.system(size: 9, weight: .regular))
+                                    .foregroundColor(Color.white.opacity(0.5))
+                                    .tracking(2)
+                            }
+                            
+                            Rectangle()
+                                .fill(Color.white.opacity(0.2))
+                                .frame(width: 1, height: 32)
+                                .padding(.horizontal, 24)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                let uniqueGuests = Set(photos.map { $0.guest_name }).count
+                                Text("\(uniqueGuests)")
+                                    .font(.system(size: 32, weight: .regular, design: .serif))
+                                    .foregroundColor(.white)
+                                Text("PEOPLE JOINED")
+                                    .font(.system(size: 9, weight: .regular))
+                                    .foregroundColor(Color.white.opacity(0.5))
+                                    .tracking(2)
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 24)
+                    .background(Color(red: 9/255, green: 9/255, blue: 11/255))
+                    .offset(y: -80)
+                    .overlay(
+                        Rectangle().frame(height: 1).foregroundColor(Color.white.opacity(0.1)),
+                        alignment: .bottom
+                    )
+                    
+                    // Grid Section
+                    if isLoading {
+                        ProgressView().progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .padding(.top, 40)
+                    } else if photos.isEmpty {
+                        VStack(spacing: 8) {
+                            Text("The roll is empty.")
+                                .font(.system(size: 24, weight: .regular, design: .serif))
+                                .italic()
+                                .foregroundColor(Color.white.opacity(0.5))
+                            Text("NO MEDIA WAS CAPTRD AT THIS EVENT.")
+                                .font(.system(size: 10, weight: .regular))
+                                .foregroundColor(Color.white.opacity(0.3))
+                                .tracking(2)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 80)
+                        .background(
+                            RoundedRectangle(cornerRadius: 48)
+                                .stroke(Color.white.opacity(0.2), style: StrokeStyle(lineWidth: 1, dash: [5]))
+                        )
+                        .padding(.horizontal, 16)
+                        .padding(.top, -30)
+                    } else {
+                        HStack(alignment: .top, spacing: 8) {
+                            // Left Column
+                            VStack(spacing: 8) {
+                                ForEach(leftColumnPhotos, id: \.1.id) { item in
+                                    MasonryItemView(photo: item.1, isLarge: true)
+                                        .onTapGesture {
+                                            withAnimation(.spring()) {
+                                                selectedPhotoIndex = item.0
+                                            }
+                                        }
+                                }
+                            }
+                            
+                            // Right Column
+                            VStack(spacing: 8) {
+                                ForEach(rightColumnPhotos, id: \.1.id) { item in
+                                    MasonryItemView(photo: item.1, isLarge: false)
+                                        .onTapGesture {
+                                            withAnimation(.spring()) {
+                                                selectedPhotoIndex = item.0
+                                            }
+                                        }
                                 }
                             }
                         }
-                        .padding(.horizontal, 2)
+                        .padding(.horizontal, 8)
+                        .padding(.top, -40)
+                        .padding(.bottom, 100)
                     }
                 }
             }
@@ -64,7 +180,11 @@ struct GalleryView: View {
                 LightboxView(
                     photos: photos,
                     initialIndex: selectedIndex,
-                    onClose: { selectedPhotoIndex = nil }
+                    onClose: {
+                        withAnimation(.spring()) {
+                            selectedPhotoIndex = nil
+                        }
+                    }
                 )
                 .transition(.opacity)
                 .zIndex(100)
@@ -91,12 +211,58 @@ struct GalleryView: View {
     }
 }
 
+// MARK: - Masonry Item
+struct MasonryItemView: View {
+    let photo: Photo
+    let isLarge: Bool
+    
+    var body: some View {
+        GeometryReader { geo in
+            let itemWidth = geo.size.width
+            let itemHeight = isLarge ? itemWidth * 1.5 : itemWidth * 1.1
+            
+            ZStack(alignment: .bottomLeading) {
+                AsyncImage(url: URL(string: photo.storage_path)) { phase in
+                    if let image = phase.image {
+                        image.resizable().aspectRatio(contentMode: .fill)
+                    } else {
+                        Color(red: 17/255, green: 17/255, blue: 17/255)
+                    }
+                }
+                .frame(width: itemWidth, height: itemHeight)
+                .clipped()
+                
+                LinearGradient(
+                    colors: [.clear, Color.black.opacity(0.5), Color.black.opacity(0.9)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: itemHeight / 2)
+                
+                Text(photo.guest_name)
+                    .font(.system(size: 18, weight: .regular, design: .serif))
+                    .italic()
+                    .foregroundColor(.white)
+                    .opacity(0.9)
+                    .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
+                    .padding(16)
+            }
+            .frame(width: itemWidth, height: itemHeight)
+            .background(Color(red: 17/255, green: 17/255, blue: 17/255))
+            .clipped()
+        }
+        .aspectRatio(1 / (isLarge ? 1.5 : 1.1), contentMode: .fit)
+    }
+}
+
 // MARK: - Lightbox
 
 struct LightboxView: View {
     let photos: [Photo]
     @State var currentIndex: Int
     let onClose: () -> Void
+    
+    @State private var dragOffset: CGFloat = 0
     
     init(photos: [Photo], initialIndex: Int, onClose: @escaping () -> Void) {
         self.photos = photos
@@ -106,59 +272,145 @@ struct LightboxView: View {
     
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            // Dark Background that fades on drag
+            Color.black
+                .opacity(Double(1.0 - abs(dragOffset) / 200.0))
+                .ignoresSafeArea()
             
+            // Top Bar
+            VStack {
+                HStack {
+                    Spacer()
+                    Button(action: onClose) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(width: 48, height: 48)
+                            .background(Circle().fill(Color.black.opacity(0.4)).overlay(Circle().stroke(Color.white.opacity(0.2), lineWidth: 1)))
+                    }
+                    .padding(.top, 56)
+                    .padding(.trailing, 20)
+                }
+                Spacer()
+            }
+            .zIndex(30)
+            
+            // Carousel
             TabView(selection: $currentIndex) {
                 ForEach(Array(photos.enumerated()), id: \.element.id) { index, photo in
                     ZoomableImage(url: URL(string: photo.storage_path))
                         .tag(index)
+                        .background(Color(red: 17/255, green: 17/255, blue: 17/255))
+                        .cornerRadius(32, corners: [.bottomLeft, .bottomRight])
+                        .clipped()
+                        .padding(.bottom, 170)
                 }
             }
             .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             .ignoresSafeArea()
-            
-            // Close Button
-            VStack {
-                HStack {
-                    Button(action: onClose) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 24, weight: .semibold))
-                            .foregroundColor(.white)
-                            .padding(16)
-                            .background(Circle().fill(Color.black.opacity(0.5)))
-                    }
-                    .padding(.top, 40)
-                    .padding(.leading, 20)
-                    Spacer()
-                }
-                Spacer()
-                
-                // Info Overlay
-                if photos.indices.contains(currentIndex) {
-                    let photo = photos[currentIndex]
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(photo.guest_name)
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.white)
-                        
-                        // Parse date
-                        if let date = ISO8601DateFormatter().date(from: photo.created_at) {
-                            Text(date.formatted(date: .abbreviated, time: .shortened))
-                                .font(.system(size: 12))
-                                .foregroundColor(.white.opacity(0.7))
+            .scaleEffect(1.0 - abs(dragOffset) / 800.0)
+            .offset(y: dragOffset)
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        if value.translation.height > 0 {
+                            dragOffset = value.translation.height
                         }
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(20)
-                    .background(
-                        LinearGradient(
-                            colors: [.black.opacity(0.8), .clear],
-                            startPoint: .bottom,
-                            endPoint: .top
-                        )
-                    )
+                    .onEnded { value in
+                        if value.translation.height > 150 || value.velocity.height > 500 {
+                            onClose()
+                        } else {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                dragOffset = 0
+                            }
+                        }
+                    }
+            )
+            
+            // Bottom Info Bar
+            VStack {
+                Spacer()
+                if photos.indices.contains(currentIndex) {
+                    let photo = photos[currentIndex]
+                    VStack(alignment: .center, spacing: 4) {
+                        HStack(alignment: .center, spacing: 8) {
+                            Text(photo.guest_name)
+                                .font(.system(size: 28, weight: .regular, design: .serif))
+                                .italic()
+                                .foregroundColor(.white)
+                            
+                            Image(systemName: "ellipsis")
+                                .foregroundColor(Color.white.opacity(0.5))
+                                .font(.system(size: 20))
+                        }
+                        .padding(.bottom, 4)
+                        
+                        if let date = ISO8601DateFormatter().date(from: photo.created_at) {
+                            Text(date.formatted(date: .omitted, time: .shortened).uppercased())
+                                .font(.system(size: 10, weight: .regular))
+                                .foregroundColor(Color.white.opacity(0.4))
+                                .tracking(2)
+                        }
+                        
+                        HStack(spacing: 12) {
+                            // Dummy Actions matching React Native layout
+                            Button(action: {}) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "camera.filters")
+                                    Text("Story")
+                                        .font(.system(size: 13, weight: .semibold))
+                                }
+                                .padding(.horizontal, 16)
+                                .frame(height: 44)
+                                .background(Color.white)
+                                .foregroundColor(.black)
+                                .cornerRadius(22)
+                            }
+                            
+                            Button(action: {}) {
+                                Image(systemName: "ghost")
+                                    .font(.system(size: 18))
+                                    .frame(width: 44, height: 44)
+                                    .background(Circle().fill(Color.white.opacity(0.1)))
+                                    .foregroundColor(.white)
+                            }
+                            
+                            Spacer()
+                            
+                            Button(action: {}) {
+                                Image(systemName: "exclamationmark.triangle")
+                                    .font(.system(size: 20))
+                                    .frame(width: 44, height: 44)
+                                    .background(Circle().fill(Color.white.opacity(0.1)))
+                                    .foregroundColor(.yellow)
+                            }
+                            
+                            Button(action: {}) {
+                                Image(systemName: "square.and.arrow.up")
+                                    .font(.system(size: 20))
+                                    .frame(width: 44, height: 44)
+                                    .background(Circle().fill(Color.white.opacity(0.1)))
+                                    .foregroundColor(.white)
+                            }
+                            
+                            Button(action: {}) {
+                                Image(systemName: "arrow.down.to.line")
+                                    .font(.system(size: 20))
+                                    .frame(width: 44, height: 44)
+                                    .background(Circle().fill(Color.white.opacity(0.1)))
+                                    .foregroundColor(.white)
+                            }
+                        }
+                        .padding(.top, 16)
+                    }
+                    .frame(height: 170)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 24)
+                    .background(Color.black)
                 }
             }
+            .ignoresSafeArea(edges: .bottom)
         }
     }
 }
@@ -176,7 +428,7 @@ struct ZoomableImage: View {
             if let image = phase.image {
                 image
                     .resizable()
-                    .aspectRatio(contentMode: .fit)
+                    .aspectRatio(contentMode: .cover)
                     .scaleEffect(scale)
                     .offset(offset)
                     .gesture(
