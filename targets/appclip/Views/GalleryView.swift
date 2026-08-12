@@ -1,4 +1,5 @@
 import SwiftUI
+import AVKit
 
 struct GalleryView: View {
     let event: Event
@@ -246,6 +247,20 @@ struct MasonryItemView: View {
                     .opacity(0.9)
                     .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
                     .padding(16)
+                
+                if photo.media_type == "video" {
+                    VStack {
+                        HStack {
+                            Spacer()
+                            Image(systemName: "play.circle.fill")
+                                .font(.system(size: 24))
+                                .foregroundColor(Color.white.opacity(0.8))
+                                .shadow(radius: 4)
+                                .padding(12)
+                        }
+                        Spacer()
+                    }
+                }
             }
             .frame(width: itemWidth, height: itemHeight)
             .background(Color(red: 17/255, green: 17/255, blue: 17/255))
@@ -298,12 +313,21 @@ struct LightboxView: View {
             // Carousel
             TabView(selection: $currentIndex) {
                 ForEach(Array(photos.enumerated()), id: \.element.id) { index, photo in
-                    ZoomableImage(url: URL(string: photo.storage_path))
-                        .tag(index)
-                        .background(Color(red: 17/255, green: 17/255, blue: 17/255))
-                        .cornerRadius(32, corners: [.bottomLeft, .bottomRight])
-                        .clipped()
-                        .padding(.bottom, 170)
+                    if photo.media_type == "video", let videoUrl = URL(string: photo.storage_path) {
+                        VideoPlayer(player: AVPlayer(url: videoUrl))
+                            .tag(index)
+                            .background(Color(red: 17/255, green: 17/255, blue: 17/255))
+                            .cornerRadius(32, corners: [.bottomLeft, .bottomRight])
+                            .clipped()
+                            .padding(.bottom, 170)
+                    } else {
+                        ZoomableImage(url: URL(string: photo.storage_path))
+                            .tag(index)
+                            .background(Color(red: 17/255, green: 17/255, blue: 17/255))
+                            .cornerRadius(32, corners: [.bottomLeft, .bottomRight])
+                            .clipped()
+                            .padding(.bottom, 170)
+                    }
                 }
             }
             .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
@@ -313,12 +337,10 @@ struct LightboxView: View {
             .gesture(
                 DragGesture()
                     .onChanged { value in
-                        if value.translation.height > 0 {
-                            dragOffset = value.translation.height
-                        }
+                        dragOffset = value.translation.height
                     }
                     .onEnded { value in
-                        if value.translation.height > 150 || value.velocity.height > 500 {
+                        if abs(value.translation.height) > 150 || abs(value.velocity.height) > 500 {
                             onClose()
                         } else {
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
@@ -354,48 +376,18 @@ struct LightboxView: View {
                         }
                         
                         HStack(spacing: 12) {
-                            // Dummy Actions matching React Native layout
-                            Button(action: {}) {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "camera.filters")
-                                    Text("Story")
-                                        .font(.system(size: 13, weight: .semibold))
-                                }
-                                .padding(.horizontal, 16)
-                                .frame(height: 44)
-                                .background(Color.white)
-                                .foregroundColor(.black)
-                                .cornerRadius(22)
-                            }
-                            
-                            Button(action: {}) {
-                                Image(systemName: "ghost")
-                                    .font(.system(size: 18))
-                                    .frame(width: 44, height: 44)
-                                    .background(Circle().fill(Color.white.opacity(0.1)))
-                                    .foregroundColor(.white)
-                            }
-                            
                             Spacer()
                             
-                            Button(action: {}) {
-                                Image(systemName: "exclamationmark.triangle")
-                                    .font(.system(size: 20))
-                                    .frame(width: 44, height: 44)
-                                    .background(Circle().fill(Color.white.opacity(0.1)))
-                                    .foregroundColor(.yellow)
-                            }
-                            
-                            Button(action: {}) {
+                            Button(action: {
+                                guard let url = URL(string: photo.storage_path) else { return }
+                                let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+                                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                                   let window = windowScene.windows.first,
+                                   let rootVC = window.rootViewController {
+                                    rootVC.present(activityVC, animated: true, completion: nil)
+                                }
+                            }) {
                                 Image(systemName: "square.and.arrow.up")
-                                    .font(.system(size: 20))
-                                    .frame(width: 44, height: 44)
-                                    .background(Circle().fill(Color.white.opacity(0.1)))
-                                    .foregroundColor(.white)
-                            }
-                            
-                            Button(action: {}) {
-                                Image(systemName: "arrow.down.to.line")
                                     .font(.system(size: 20))
                                     .frame(width: 44, height: 44)
                                     .background(Circle().fill(Color.white.opacity(0.1)))
@@ -428,7 +420,7 @@ struct ZoomableImage: View {
             if let image = phase.image {
                 image
                     .resizable()
-                    .aspectRatio(contentMode: .cover)
+                    .aspectRatio(contentMode: .fill)
                     .scaleEffect(scale)
                     .offset(offset)
                     .gesture(

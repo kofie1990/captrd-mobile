@@ -3,15 +3,18 @@ import AVFoundation
 
 struct CameraView: View {
     let event: Event
+    @Binding var selectedTab: Int
     
     @StateObject private var model = CameraViewModel()
     @State private var showGrid = false
     @State private var flashMode: AVCaptureDevice.FlashMode = .off
+    @State private var showFlash = false
     @State private var isCapturing = false
     @State private var guestName: String = ""
     @State private var photosCount = 0
     @State private var isUploading = false
     @State private var latestPhotoUrl: String? = nil
+    @State private var pendingUploads: [FailedUpload] = []
     
     var body: some View {
         ZStack {
@@ -34,6 +37,32 @@ struct CameraView: View {
                     
                     // Top Bar Gradient
                     VStack {
+                        if isUploading {
+                            Text("Upload in progress...")
+                                .font(.system(size: 11, weight: .bold))
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Color.white.opacity(0.2))
+                                .cornerRadius(12)
+                                .foregroundColor(.white)
+                                .padding(.top, 48)
+                                .transition(.opacity)
+                        } else if !pendingUploads.isEmpty {
+                            Button(action: retryPendingUploads) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "arrow.clockwise.icloud.fill")
+                                    Text("Retry \(pendingUploads.count) Failed")
+                                        .font(.system(size: 11, weight: .bold))
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Color.red.opacity(0.8))
+                                .cornerRadius(12)
+                                .foregroundColor(.white)
+                            }
+                            .padding(.top, 48)
+                            .transition(.opacity)
+                        }
                         LinearGradient(
                             colors: [Color.black.opacity(0.6), .clear],
                             startPoint: .top,
@@ -84,17 +113,17 @@ struct CameraView: View {
                                             .frame(width: 44, height: 44)
                                             .background(Circle().fill(showGrid ? Color.white.opacity(0.3) : Color.white.opacity(0.1)))
                                     }
-                                    
-                                    Button(action: {
-                                        let generator = UIImpactFeedbackGenerator(style: .light)
-                                        generator.impactOccurred()
-                                        model.flipCamera()
-                                    }) {
-                                        Image(systemName: "arrow.triangle.2.circlepath.camera.fill")
-                                            .foregroundColor(.white)
-                                            .frame(width: 44, height: 44)
-                                            .background(Circle().fill(Color.white.opacity(0.1)))
-                                    }
+                                }
+                                
+                                Button(action: {
+                                    let generator = UIImpactFeedbackGenerator(style: .light)
+                                    generator.impactOccurred()
+                                    model.flipCamera()
+                                }) {
+                                    Image(systemName: "arrow.triangle.2.circlepath.camera.fill")
+                                        .foregroundColor(.white)
+                                        .frame(width: 44, height: 44)
+                                        .background(Circle().fill(Color.white.opacity(0.1)))
                                 }
                             }
                         }
@@ -107,6 +136,11 @@ struct CameraView: View {
                     // Viewfinder Overlay
                     if model.photo == nil {
                         ViewfinderOverlay(showGrid: showGrid)
+                        if showFlash {
+                            Color.white
+                                .ignoresSafeArea()
+                                .opacity(0.8)
+                        }
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -116,22 +150,27 @@ struct CameraView: View {
                 // Bottom Bar
                 HStack {
                     // Left: Gallery Thumbnail
-                    if let thumb = latestPhotoUrl {
-                        AsyncImage(url: URL(string: thumb)) { phase in
-                            if let image = phase.image {
-                                image.resizable().aspectRatio(contentMode: .fill)
-                            } else {
-                                Color.white.opacity(0.1)
+                    Button(action: {
+                        selectedTab = 1
+                    }) {
+                        if let thumb = latestPhotoUrl {
+                            AsyncImage(url: URL(string: thumb)) { phase in
+                                if let image = phase.image {
+                                    image.resizable().aspectRatio(contentMode: .fill)
+                                } else {
+                                    Color.white.opacity(0.1)
+                                }
                             }
+                            .frame(width: 56, height: 56)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white, lineWidth: 2))
+                        } else {
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(Color.white.opacity(0.1))
+                                .frame(width: 56, height: 56)
+                                .overlay(Image(systemName: "photo").foregroundColor(Color.white.opacity(0.4)))
+                                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.2), lineWidth: 1))
                         }
-                        .frame(width: 48, height: 48)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.2), lineWidth: 1))
-                    } else {
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.white.opacity(0.1))
-                            .frame(width: 48, height: 48)
-                            .overlay(Image(systemName: "photo").foregroundColor(Color.white.opacity(0.4)))
                     }
                     
                     Spacer()
@@ -145,22 +184,25 @@ struct CameraView: View {
                                 model.retakePhoto()
                             }) {
                                 Image(systemName: "xmark")
-                                    .font(.system(size: 28, weight: .semibold))
+                                    .font(.system(size: 24, weight: .semibold))
                                     .foregroundColor(.white)
-                                    .frame(width: 72, height: 72)
+                                    .frame(width: 64, height: 64)
                                     .background(Circle().fill(Color.white.opacity(0.15)))
+                                    .overlay(Circle().stroke(Color.white.opacity(0.2), lineWidth: 1))
+                                    .shadow(radius: 4)
                             }
                             
                             Button(action: {
                                 uploadPhoto(image: image)
                             }) {
                                 ZStack {
-                                    Circle().fill(Color.white).frame(width: 72, height: 72)
+                                    Circle().fill(Color.white).frame(width: 64, height: 64)
+                                        .shadow(radius: 4)
                                     if isUploading {
                                         ProgressView().progressViewStyle(CircularProgressViewStyle(tint: .black))
                                     } else {
                                         Image(systemName: "checkmark")
-                                            .font(.system(size: 28, weight: .bold))
+                                            .font(.system(size: 24, weight: .bold))
                                             .foregroundColor(.black)
                                     }
                                 }
@@ -168,26 +210,40 @@ struct CameraView: View {
                             .disabled(isUploading)
                         }
                     } else {
-                        Button(action: {
-                            if photosCount >= (event.max_photos_per_user ?? 10) { return }
-                            isCapturing = true
-                            let generator = UIImpactFeedbackGenerator(style: .heavy)
-                            generator.impactOccurred()
-                            model.capturePhoto()
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                isCapturing = false
-                            }
-                        }) {
-                            ZStack {
-                                Circle()
-                                    .stroke(Color.white, lineWidth: 4)
-                                    .frame(width: 76, height: 76)
-                                Circle()
-                                    .fill(Color.white)
-                                    .frame(width: 64, height: 64)
-                                    .scaleEffect(isCapturing ? 0.95 : 1.0)
-                                    .opacity(isCapturing ? 0.8 : 1.0)
-                                    .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isCapturing)
+                        if photosCount >= (event.max_photos_per_user ?? 15) {
+                            Text("ROLL COMPLETE")
+                                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                                .foregroundColor(.black)
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 12)
+                                .background(Color.white)
+                                .cornerRadius(100)
+                        } else {
+                            Button(action: {
+                                isCapturing = true
+                                showFlash = true
+                                let generator = UIImpactFeedbackGenerator(style: .heavy)
+                                generator.impactOccurred()
+                                model.capturePhoto()
+                                withAnimation(.easeOut(duration: 0.2)) {
+                                    showFlash = false
+                                }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                    isCapturing = false
+                                }
+                            }) {
+                                ZStack {
+                                    Circle()
+                                        .stroke(Color.white.opacity(0.3), lineWidth: 4)
+                                        .frame(width: 76, height: 76)
+                                        .shadow(color: Color.white.opacity(0.2), radius: 8)
+                                    Circle()
+                                        .fill(Color.white)
+                                        .frame(width: 64, height: 64)
+                                        .scaleEffect(isCapturing ? 0.95 : 1.0)
+                                        .opacity(isCapturing ? 0.8 : 1.0)
+                                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isCapturing)
+                                }
                             }
                         }
                     }
@@ -196,16 +252,13 @@ struct CameraView: View {
                     
                     // Right: Photos Left
                     if model.photo == nil {
-                        VStack(spacing: 2) {
-                            Text("\(max(0, (event.max_photos_per_user ?? 10) - photosCount))")
-                                .font(.system(size: 20, weight: .bold, design: .monospaced))
-                                .foregroundColor(.white)
-                            Text("LEFT")
-                                .font(.system(size: 9, weight: .bold))
-                                .foregroundColor(Color.white.opacity(0.5))
-                                .tracking(1)
-                        }
-                        .frame(width: 48)
+                        Text("\(photosCount)/\(event.max_photos_per_user ?? 15)")
+                            .font(.system(size: 14, weight: .bold, design: .serif))
+                            .foregroundColor(.black)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(Color.white)
+                            .cornerRadius(12)
                     } else {
                         Spacer().frame(width: 48)
                     }
@@ -217,6 +270,7 @@ struct CameraView: View {
         }
         .onAppear {
             guestName = LocalStorage.shared.getGuestName(for: event.id) ?? "Guest"
+            pendingUploads = FailedUploadManager.shared.getFailedUploads(for: event.id)
             model.startSession()
             fetchPhotosCount()
         }
@@ -253,7 +307,55 @@ struct CameraView: View {
                     model.retakePhoto() // Reset to camera view
                 case .failure(let error):
                     print("Upload failed: \(error)")
+                    FailedUploadManager.shared.saveFailedUpload(image: data, eventId: event.id, guestName: guestName)
+                    pendingUploads = FailedUploadManager.shared.getFailedUploads(for: event.id)
+                    model.retakePhoto()
                 }
+            }
+        }
+    }
+    
+    private func retryPendingUploads() {
+        guard !pendingUploads.isEmpty else { return }
+        
+        let currentPending = pendingUploads
+        pendingUploads = [] // Optimistically clear
+        
+        var failedAgain: [FailedUpload] = []
+        let group = DispatchGroup()
+        
+        isUploading = true
+        
+        for item in currentPending {
+            group.enter()
+            
+            guard let data = FileManager.default.contents(atPath: item.uri) else {
+                failedAgain.append(item)
+                group.leave()
+                continue
+            }
+            
+            SupabaseClient.shared.uploadPhoto(data: data, eventId: item.eventId, guestName: item.guestName) { result in
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success(let url):
+                        FailedUploadManager.shared.deleteFailedUpload(id: item.id)
+                        photosCount += 1
+                        latestPhotoUrl = url
+                    case .failure(_):
+                        failedAgain.append(item)
+                    }
+                    group.leave()
+                }
+            }
+        }
+        
+        group.notify(queue: .main) {
+            isUploading = false
+            if !failedAgain.isEmpty {
+                pendingUploads = failedAgain
+            } else {
+                pendingUploads = FailedUploadManager.shared.getFailedUploads(for: event.id)
             }
         }
     }

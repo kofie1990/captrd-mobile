@@ -6,7 +6,7 @@ struct MainTabView: View {
     
     var body: some View {
         TabView(selection: $selectedTab) {
-            CameraView(event: event)
+            CameraView(event: event, selectedTab: $selectedTab)
                 .tabItem {
                     Image(systemName: "camera.fill")
                     Text("Capture")

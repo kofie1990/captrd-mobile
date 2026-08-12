@@ -46,7 +46,8 @@ class SupabaseClient {
     }
     
     func fetchEvent(by code: String, completion: @escaping (Result<Event, Error>) -> Void) {
-        let endpoint = "/rest/v1/events?short_code=eq.\(code)&select=*"
+        let isUUID = code.count == 36
+        let endpoint = isUUID ? "/rest/v1/events?id=eq.\(code)&select=*" : "/rest/v1/events?short_code=eq.\(code.lowercased())&select=*"
         let request = makeRequest(endpoint: endpoint)
         
         session.dataTask(with: request) { data, response, error in
