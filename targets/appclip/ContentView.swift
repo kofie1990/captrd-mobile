@@ -8,7 +8,7 @@ struct ContentView: View {
             Color.black.ignoresSafeArea()
             
             if appState.isFetching {
-                SkeletonLoadingView()
+                SplashLoadingView()
             } else if let error = appState.error {
                 VStack(spacing: 16) {
                     Image(systemName: "exclamationmark.triangle")
@@ -46,49 +46,75 @@ struct ContentView: View {
     }
 }
 
-struct SkeletonLoadingView: View {
-    @State private var opacity: Double = 0.5
+struct SplashLoadingView: View {
+    @State private var rotation: Double = 0
+    @State private var scale: CGFloat = 0.9
+    @State private var textTracking: CGFloat = 2
+    @State private var glowOpacity: Double = 0.3
     
     var body: some View {
         ZStack {
-            Color(red: 9/255, green: 9/255, blue: 11/255).ignoresSafeArea()
+            Color.black.ignoresSafeArea()
             
-            VStack(alignment: .leading, spacing: 0) {
-                // Header Skeleton
-                VStack(alignment: .leading, spacing: 12) {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color(red: 28/255, green: 28/255, blue: 30/255))
-                        .frame(width: 150, height: 20)
+            // Pulsing ambient glow
+            RadialGradient(
+                gradient: Gradient(colors: [Color.white.opacity(0.15), .clear]),
+                center: .center,
+                startRadius: 50,
+                endRadius: 300
+            )
+            .scaleEffect(scale)
+            .opacity(glowOpacity)
+            
+            VStack(spacing: 48) {
+                // Spinning Aperture Ring
+                ZStack {
+                    Circle()
+                        .stroke(Color.white.opacity(0.05), lineWidth: 1)
+                        .frame(width: 90, height: 90)
                     
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color(red: 28/255, green: 28/255, blue: 30/255))
-                        .frame(width: 250, height: 40)
-                }
-                .padding(.bottom, 32)
-                .padding(.horizontal, 24)
-                .padding(.top, 80)
-                
-                // Cards Skeleton
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 20) {
-                        RoundedRectangle(cornerRadius: 24)
-                            .fill(Color(red: 28/255, green: 28/255, blue: 30/255))
-                            .frame(width: 280, height: 380)
-                        
-                        RoundedRectangle(cornerRadius: 24)
-                            .fill(Color(red: 28/255, green: 28/255, blue: 30/255))
-                            .frame(width: 280, height: 380)
-                    }
-                    .padding(.horizontal, 24)
+                    Circle()
+                        .trim(from: 0.1, to: 0.9)
+                        .stroke(
+                            AngularGradient(
+                                gradient: Gradient(colors: [.white, Color.white.opacity(0.1)]),
+                                center: .center
+                            ),
+                            style: StrokeStyle(lineWidth: 2, lineCap: .round)
+                        )
+                        .frame(width: 90, height: 90)
+                        .rotationEffect(.degrees(rotation))
+                    
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 6, height: 6)
+                        .offset(y: -45)
+                        .rotationEffect(.degrees(rotation * 1.5)) // Spins faster
                 }
                 
-                Spacer()
+                // Premium Text Reveal
+                VStack(spacing: 8) {
+                    Text("CAPTRD")
+                        .font(.system(size: 28, weight: .regular, design: .serif))
+                        .foregroundColor(.white)
+                        .tracking(textTracking)
+                        .opacity(scale)
+                    
+                    Text("DEVELOPING FILM...")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundColor(Color.white.opacity(0.5))
+                        .tracking(4)
+                }
             }
-            .opacity(opacity)
-            .onAppear {
-                withAnimation(Animation.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
-                    opacity = 1.0
-                }
+        }
+        .onAppear {
+            withAnimation(Animation.linear(duration: 2).repeatForever(autoreverses: false)) {
+                rotation = 360
+            }
+            withAnimation(Animation.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
+                scale = 1.05
+                glowOpacity = 0.6
+                textTracking = 8
             }
         }
     }
