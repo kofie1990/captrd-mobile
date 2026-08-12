@@ -17,7 +17,9 @@ module.exports = {
     "com.apple.developer.on-demand-install-capable": true,
     "com.apple.developer.associated-domains": [
       "applinks:captrd.live",
-      "appclips:captrd.live"
+      "appclips:captrd.live",
+      "applinks:www.captrd.live",
+      "appclips:www.captrd.live"
     ],
     "com.apple.security.application-groups": [
       "group.live.captrd.app"
