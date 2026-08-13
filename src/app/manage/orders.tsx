@@ -102,12 +102,12 @@ export default function ManageOrdersScreen() {
                     <User size={14} color="rgba(255,255,255,0.4)" />
                     <Text className="text-white/80 font-sans text-sm">{order.shipping_name}</Text>
                   </View>
-                  {order.shipping_email && (
+                  {order.shipping_email ? (
                     <View className="flex-row items-center gap-3">
                       <Mail size={14} color="rgba(255,255,255,0.4)" />
                       <Text className="text-white/80 font-sans text-sm">{order.shipping_email}</Text>
                     </View>
-                  )}
+                  ) : null}
                   <View className="flex-row items-center gap-3">
                     <MapPin size={14} color="rgba(255,255,255,0.4)" />
                     <Text className="text-white/80 font-sans text-sm flex-1">
