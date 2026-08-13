@@ -4,9 +4,9 @@ import { supabase } from '@/lib/supabase';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ArrowRight, Image as ImageIcon, Plus, QrCode, X } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Dimensions, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ArrowRight, Image as ImageIcon, Plus, QrCode, X, RefreshCcw } from 'lucide-react-native';
+import { useEffect, useState, useCallback } from 'react';
+import { ActivityIndicator, Dimensions, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, RefreshControl } from 'react-native';
 import { InviteCaptureView } from '@/components/InviteCaptureView';
 import { LoadingState } from '@/components/ui/LoadingState';
 import * as Sharing from 'expo-sharing';
@@ -64,46 +64,57 @@ export default function DashboardScreen() {
     }, 300);
   };
 
-  useEffect(() => {
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchEvents = useCallback(async () => {
     if (!user) return;
 
-    const fetchEvents = async () => {
-      // Fetch created events
-      const { data: createdData } = await supabase
-        .from('events')
-        .select('*')
-        .eq('admin_id', user.id)
-        .order('created_at', { ascending: false });
+    // Fetch created events
+    const { data: createdData } = await supabase
+      .from('events')
+      .select('*')
+      .eq('admin_id', user.id)
+      .order('created_at', { ascending: false });
 
-      if (createdData) {
-        setEvents(createdData);
-        const eventIds = createdData.map(e => e.id);
-        if (eventIds.length > 0) {
-          const { count } = await supabase
-            .from('photos')
-            .select('*', { count: 'exact', head: true })
-            .in('event_id', eventIds);
-          if (count) setTotalPhotos(count);
-        }
+    if (createdData) {
+      setEvents(createdData);
+      const eventIds = createdData.map(e => e.id);
+      if (eventIds.length > 0) {
+        const { count } = await supabase
+          .from('photos')
+          .select('*', { count: 'exact', head: true })
+          .in('event_id', eventIds);
+        if (count) setTotalPhotos(count);
+      } else {
+        setTotalPhotos(0);
       }
+    }
 
-      // Fetch joined events
-      const { data: joinedData } = await supabase
-        .from('event_participants')
-        .select('events(*)')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+    // Fetch joined events
+    const { data: joinedData } = await supabase
+      .from('event_participants')
+      .select('events(*)')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
 
-      if (joinedData) {
-        const mapped = joinedData.map((d: any) => d.events).filter(Boolean);
-        setJoinedEvents(mapped);
-      }
+    if (joinedData) {
+      const mapped = joinedData.map((d: any) => d.events).filter(Boolean);
+      setJoinedEvents(mapped);
+    }
 
-      setLoading(false);
-    };
-
-    fetchEvents();
+    setLoading(false);
   }, [user]);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    await fetchEvents();
+    setRefreshing(false);
+  };
 
   const handleCreateRoll = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -124,13 +135,21 @@ export default function DashboardScreen() {
   const ListHeader = () => (
     <View>
       {/* Welcome Section */}
-      <View className="px-6 pb-6 mt-4">
-        <Text className="font-serif text-3xl tracking-tight text-white mb-1">
-          Welcome back,
-        </Text>
-        <Text className="font-serif text-3xl tracking-tight text-white/70 italic">
-          {userName}
-        </Text>
+      <View className="px-6 pb-6 mt-4 flex-row justify-between items-center">
+        <View>
+          <Text className="font-serif text-3xl tracking-tight text-white mb-1">
+            Welcome back,
+          </Text>
+          <Text className="font-serif text-3xl tracking-tight text-white/70 italic">
+            {userName}
+          </Text>
+        </View>
+        <Pressable 
+          onPress={onRefresh}
+          className="w-12 h-12 rounded-full bg-white/10 items-center justify-center active:scale-95"
+        >
+          <RefreshCcw size={20} color="#fff" />
+        </Pressable>
       </View>
 
       {/* Metrics & Actions Grid */}
@@ -194,7 +213,18 @@ export default function DashboardScreen() {
     <View style={{ flex: 1, backgroundColor: '#09090b' }}>
       <StatusBar style="light" />
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 120, paddingTop: 60 }} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        contentContainerStyle={{ paddingBottom: 120, paddingTop: 60 }} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#ffffff"
+            colors={['#ffffff']}
+          />
+        }
+      >
         <ListHeader />
         <FlatList
           data={currentList}

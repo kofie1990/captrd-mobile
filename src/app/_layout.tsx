@@ -80,6 +80,7 @@ function InitialLayout() {
           <Stack.Screen name="scan" options={{ presentation: 'fullScreenModal' }} />
           <Stack.Screen name="e/[code]" />
           <Stack.Screen name="manage/[id]" />
+          <Stack.Screen name="paywall" options={{ presentation: 'fullScreenModal' }} />
         </Stack>
       )}
       {(!isAppReady || !isSplashAnimationComplete) && (

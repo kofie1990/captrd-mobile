@@ -6,7 +6,8 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ArrowLeft, Book, CheckCircle, ChevronLeft, ChevronRight, Image as ImageIcon, LayoutGrid } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { Paystack, paystackProps } from 'react-native-paystack-webview';
 import { Alert, Dimensions, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
@@ -45,12 +46,15 @@ export default function OrderScreen() {
   const [shippingName, setShippingName] = useState("");
   const [shippingAddress, setShippingAddress] = useState("");
   const [shippingCity, setShippingCity] = useState("");
-  const [shippingZip, setShippingZip] = useState("");
+  const [shippingGps, setShippingGps] = useState("");
+  const [shippingEmail, setShippingEmail] = useState("");
 
   // Checkout state
   const [showShippingStep, setShowShippingStep] = useState(false);
   const [simulatingCheckout, setSimulatingCheckout] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
+  const [currentReference, setCurrentReference] = useState("");
+  const paystackWebViewRef = useRef<paystackProps.PayStackRef>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -87,6 +91,9 @@ export default function OrderScreen() {
     if (!user || !selectedEvent) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setSimulatingCheckout(true);
+    
+    const generatedRef = `CPTRD-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+    setCurrentReference(generatedRef);
 
     try {
       const { error } = await supabase.from('orders').insert({
@@ -97,23 +104,36 @@ export default function OrderScreen() {
         shipping_name: shippingName,
         shipping_address: shippingAddress,
         shipping_city: shippingCity,
-        shipping_zip: shippingZip,
-        status: 'pending'
+        shipping_gps: shippingGps,
+        shipping_email: shippingEmail,
+        status: 'pending',
+        paystack_reference: generatedRef
       });
 
       if (error) {
-        console.error("Error placing order:", error);
-        Alert.alert("Error", "Failed to place order. Please try again.");
-      } else {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        setOrderComplete(true);
+        console.error("Error creating pending order:", error);
+        Alert.alert("Error", "Failed to initiate order. Please try again.");
+        setSimulatingCheckout(false);
+        return;
       }
+      
+      // Open Paystack after order is securely in database
+      paystackWebViewRef.current?.startTransaction();
     } catch (err) {
       console.error(err);
       Alert.alert("Error", "An unexpected error occurred.");
-    } finally {
       setSimulatingCheckout(false);
     }
+  };
+
+  const handlePaymentSuccess = (res: any) => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setOrderComplete(true);
+    setSimulatingCheckout(false);
+  };
+
+  const handlePaymentCancel = () => {
+    setSimulatingCheckout(false);
   };
 
   const resolveLocalUrl = (url: string | undefined) => {
@@ -156,6 +176,15 @@ export default function OrderScreen() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, backgroundColor: '#09090b' }}>
       <StatusBar style="light" />
+      <Paystack
+        paystackKey={process.env.EXPO_PUBLIC_PAYSTACK_KEY || ""}
+        billingEmail={shippingEmail || "placeholder@example.com"}
+        amount={399.00}
+        refNumber={currentReference}
+        onCancel={handlePaymentCancel}
+        onSuccess={handlePaymentSuccess}
+        ref={paystackWebViewRef}
+      />
       <ScrollView contentContainerStyle={{ paddingBottom: 120, paddingTop: 60 }} showsVerticalScrollIndicator={false}>
         <View className="px-6 mb-6">
           {selectedEvent && (
@@ -228,6 +257,15 @@ export default function OrderScreen() {
                     className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-4 text-white font-sans text-base"
                   />
                   <TextInput
+                    placeholder="Email Address"
+                    placeholderTextColor="rgba(255,255,255,0.4)"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    value={shippingEmail}
+                    onChangeText={setShippingEmail}
+                    className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-4 text-white font-sans text-base"
+                  />
+                  <TextInput
                     placeholder="Address"
                     placeholderTextColor="rgba(255,255,255,0.4)"
                     value={shippingAddress}
@@ -243,10 +281,10 @@ export default function OrderScreen() {
                       className="flex-1 bg-[#111] border border-white/10 rounded-xl px-4 py-4 text-white font-sans text-base"
                     />
                     <TextInput
-                      placeholder="GPS Address GA-XX.."
+                      placeholder="Ghana GPS Address (GA-XXX-XXX)"
                       placeholderTextColor="rgba(255,255,255,0.4)"
-                      value={shippingZip}
-                      onChangeText={setShippingZip}
+                      value={shippingGps}
+                      onChangeText={setShippingGps}
                       className="flex-1 bg-[#111] border border-white/10 rounded-xl px-4 py-4 text-white font-sans text-base"
                     />
                   </View>
@@ -263,14 +301,14 @@ export default function OrderScreen() {
 
                   <Pressable
                     onPress={handlePlaceOrder}
-                    disabled={simulatingCheckout || !shippingName || !shippingAddress || !shippingCity || !shippingZip}
+                    disabled={simulatingCheckout || !shippingName || !shippingEmail || !shippingAddress || !shippingCity || !shippingGps}
                   >
                     {({ pressed }) => (
                       <View
                         className="w-full py-4 rounded-full flex-row justify-center items-center"
                         style={{
-                          backgroundColor: (simulatingCheckout || !shippingName || !shippingAddress || !shippingCity || !shippingZip) ? 'rgba(255,255,255,0.4)' : '#ffffff',
-                          transform: [{ scale: pressed && !(simulatingCheckout || !shippingName || !shippingAddress || !shippingCity || !shippingZip) ? 0.95 : 1 }]
+                          backgroundColor: (simulatingCheckout || !shippingName || !shippingEmail || !shippingAddress || !shippingCity || !shippingGps) ? 'rgba(255,255,255,0.4)' : '#ffffff',
+                          transform: [{ scale: pressed && !(simulatingCheckout || !shippingName || !shippingEmail || !shippingAddress || !shippingCity || !shippingGps) ? 0.95 : 1 }]
                         }}
                       >
                         {simulatingCheckout && <LoadingState.Spinner size={16} style={{ marginRight: 8 }} />}

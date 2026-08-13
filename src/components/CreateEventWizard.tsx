@@ -345,12 +345,27 @@ export function CreateEventWizard({ userId, onEventCreated, onCancel }: Props) {
                   <Text className="font-mono text-xs text-white/50">Locked to 5 photos for the free tier.</Text>
                 </View>
               ) : (
-                <TextInput
-                  keyboardType="numeric"
-                  value={customMaxPhotos}
-                  onChangeText={setCustomMaxPhotos}
-                  className="w-full bg-transparent border-b border-white/20 py-2 text-xl text-white font-serif"
-                />
+                <View>
+                  <TextInput
+                    keyboardType="numeric"
+                    value={customMaxPhotos}
+                    onChangeText={(text) => {
+                      if (text === '') {
+                        setCustomMaxPhotos('');
+                        return;
+                      }
+                      const val = parseInt(text.replace(/[^0-9]/g, ''), 10);
+                      if (isNaN(val)) return;
+                      if (val > selectedTier.maxPhotos) {
+                        setCustomMaxPhotos(selectedTier.maxPhotos.toString());
+                      } else {
+                        setCustomMaxPhotos(val.toString());
+                      }
+                    }}
+                    className="w-full bg-transparent border-b border-white/20 py-2 text-xl text-white font-serif"
+                  />
+                  <Text className="text-white/40 text-xs mt-2 font-mono uppercase tracking-widest">Max allowed for this tier: {selectedTier.maxPhotos}</Text>
+                </View>
               )}
             </View>
           </Animated.View>
@@ -548,8 +563,9 @@ export function CreateEventWizard({ userId, onEventCreated, onCancel }: Props) {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-    <View className="flex-1 bg-black pt-16 pb-10">
-      <View className="px-8 flex-row justify-between items-center mb-8">
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1 bg-black">
+        <View className="flex-1 pt-16 pb-10">
+          <View className="px-8 flex-row justify-between items-center mb-8">
         <Text className="font-serif text-3xl text-white">New Film Roll</Text>
         <Text className="font-mono text-[10px] text-white/50 uppercase tracking-widest">Step {step} of 6</Text>
       </View>
@@ -574,6 +590,7 @@ export function CreateEventWizard({ userId, onEventCreated, onCancel }: Props) {
         </Pressable>
       </View>
     </View>
+      </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
   );
 }

@@ -556,6 +556,9 @@ class CameraViewModel: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate
     func capturePhoto() {
         guard let connection = photoOutput.connection(with: .video) else { return }
         connection.videoOrientation = .portrait
+        if connection.isVideoMirroringSupported {
+            connection.isVideoMirrored = currentPosition == .front
+        }
         
         let settings = AVCapturePhotoSettings()
         settings.flashMode = currentFlashMode

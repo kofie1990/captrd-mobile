@@ -2,6 +2,7 @@
 module.exports = {
   type: "clip",
   name: "CaptrdAppClip",
+  displayName: "Captrd",
   bundleIdentifier: "live.captrd.app.appclip",
   icon: "../../assets/images/icon.png",
   exportJs: false,

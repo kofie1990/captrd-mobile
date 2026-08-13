@@ -2,7 +2,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ArrowLeft, Package, User, MapPin, Calendar } from 'lucide-react-native';
+import { ArrowLeft, Package, User, MapPin, Calendar, Mail } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { LoadingState } from '@/components/ui/LoadingState';
@@ -16,7 +16,8 @@ type Order = {
   shipping_name: string;
   shipping_address: string;
   shipping_city: string;
-  shipping_zip: string;
+  shipping_gps: string;
+  shipping_email?: string;
   status: string;
   created_at: string;
   events: {
@@ -101,10 +102,16 @@ export default function ManageOrdersScreen() {
                     <User size={14} color="rgba(255,255,255,0.4)" />
                     <Text className="text-white/80 font-sans text-sm">{order.shipping_name}</Text>
                   </View>
+                  {order.shipping_email && (
+                    <View className="flex-row items-center gap-3">
+                      <Mail size={14} color="rgba(255,255,255,0.4)" />
+                      <Text className="text-white/80 font-sans text-sm">{order.shipping_email}</Text>
+                    </View>
+                  )}
                   <View className="flex-row items-center gap-3">
                     <MapPin size={14} color="rgba(255,255,255,0.4)" />
                     <Text className="text-white/80 font-sans text-sm flex-1">
-                      {order.shipping_address}, {order.shipping_city}, {order.shipping_zip}
+                      {order.shipping_address}, {order.shipping_city}, {order.shipping_gps}
                     </Text>
                   </View>
                   <View className="flex-row items-center gap-3">

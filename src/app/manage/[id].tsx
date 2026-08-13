@@ -496,13 +496,16 @@ export default function ManageEventScreen() {
                <Text className="font-serif text-3xl text-white mb-2 text-center">{eventData.title}</Text>
                <Text className="font-mono text-xs uppercase tracking-widest text-white/50 mb-8 text-center">Scan to join the film roll</Text>
                
-               <View className="bg-white p-4 rounded-3xl mb-8">
+               <View className="bg-white p-4 rounded-3xl mb-8 items-center">
                  <QRCode
                    value={`https://captrd.live/e/${eventData.short_code || eventData.id}`}
                    size={200}
                    color="#000"
                    backgroundColor="#fff"
                  />
+                 <Text className="mt-4 font-mono text-xs uppercase tracking-widest text-black/60 text-center">
+                   Code: <Text className="font-bold text-black text-base">{eventData.short_code}</Text>
+                 </Text>
                </View>
 
                <Text className="font-mono text-[10px] uppercase tracking-widest text-white/40">Powered by Captrd</Text>

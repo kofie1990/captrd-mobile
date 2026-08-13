@@ -1,16 +1,32 @@
 import React from 'react';
 import { View, Text, ScrollView, Pressable, Alert, Linking } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { LogOut, Trash2, User as UserIcon, Wand2, ExternalLink, Package, Mail } from 'lucide-react-native';
+import { LogOut, Trash2, User as UserIcon, Package, Mail, Wand2, ExternalLink } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
+import { usePurchases } from '@/hooks/usePurchases';
 import { useRouter } from 'expo-router';
+import { Platform } from 'react-native';
 
 export default function ProfileScreen() {
   const { user } = useAuth();
+  const { customerInfo } = usePurchases();
   const router = useRouter();
   const userName = user?.user_metadata?.full_name || 'Photographer';
   const email = user?.email || '';
+  const isSubscribed = customerInfo?.entitlements?.active['studio_access'] !== undefined;
+
+  const handleStudioAction = () => {
+    if (isSubscribed) {
+      if (Platform.OS === 'ios') {
+        Linking.openURL('https://apps.apple.com/account/subscriptions');
+      } else {
+        Linking.openURL('https://play.google.com/store/account/subscriptions');
+      }
+    } else {
+      router.push('/paywall');
+    }
+  };
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -47,9 +63,7 @@ export default function ProfileScreen() {
     );
   };
 
-  const openStudioSubscription = () => {
-    Linking.openURL('https://captrd.live/studio');
-  };
+
 
   return (
     <ScrollView 
@@ -77,7 +91,7 @@ export default function ProfileScreen() {
         </View>
 
         <Pressable 
-          onPress={openStudioSubscription}
+          onPress={handleStudioAction}
           className="glass p-5 rounded-2xl flex-row items-center justify-between active:scale-[0.98] transition-transform"
         >
           <View className="flex-row items-center gap-4">
@@ -85,8 +99,12 @@ export default function ProfileScreen() {
               <Wand2 size={20} color="#fff" />
             </View>
             <View>
-              <Text className="font-sans text-white text-base">Manage Studio Subscription</Text>
-              <Text className="font-sans text-white/50 text-xs">captrd.live/studio</Text>
+              <Text className="font-sans text-white text-base">
+                {isSubscribed ? 'Manage Studio Subscription' : 'Upgrade to Studio'}
+              </Text>
+              <Text className="font-sans text-white/50 text-xs">
+                {isSubscribed ? 'Active' : 'Get unlimited high-res uploads'}
+              </Text>
             </View>
           </View>
           <ExternalLink size={20} color="rgba(255,255,255,0.3)" />

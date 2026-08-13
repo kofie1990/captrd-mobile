@@ -65,4 +65,26 @@ class SocialSharing {
             rootVC.present(activityVC, animated: true, completion: nil)
         }
     }
+    
+    func saveMedia(url: String) {
+        guard let urlObj = URL(string: url) else { return }
+        DispatchQueue.global().async {
+            do {
+                let data = try Data(contentsOf: urlObj)
+                DispatchQueue.main.async {
+                    if urlObj.pathExtension.lowercased() == "mp4" {
+                        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(urlObj.lastPathComponent)
+                        try? data.write(to: tempURL)
+                        UISaveVideoAtPathToSavedPhotosAlbum(tempURL.path, nil, nil, nil)
+                    } else {
+                        if let image = UIImage(data: data) {
+                            UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+                        }
+                    }
+                }
+            } catch {
+                print("Failed to download media: \(error)")
+            }
+        }
+    }
 }

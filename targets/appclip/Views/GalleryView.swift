@@ -45,7 +45,6 @@ struct GalleryView: View {
                             startPoint: .top,
                             endPoint: .bottom
                         )
-                        .frame(height: 200)
                         
                         HStack {
                             Button(action: {
@@ -73,7 +72,7 @@ struct GalleryView: View {
                     // Title Section
                     VStack(alignment: .leading, spacing: 4) {
                         Text(event.title)
-                            .font(.system(size: 48, weight: .regular, design: .serif))
+                            .font(.custom("Playfair Display", size: 48))
                             .foregroundColor(Color(red: 252/255, green: 252/255, blue: 252/255))
                             .tracking(-1)
                         
@@ -86,7 +85,7 @@ struct GalleryView: View {
                         HStack(alignment: .center) {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("\(photos.count)")
-                                    .font(.system(size: 32, weight: .regular, design: .serif))
+                                    .font(.custom("Playfair Display", size: 32))
                                     .foregroundColor(.white)
                                 Text("TOTAL PICTURES")
                                     .font(.system(size: 9, weight: .regular))
@@ -102,7 +101,7 @@ struct GalleryView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 let uniqueGuests = Set(photos.map { $0.guest_name }).count
                                 Text("\(uniqueGuests)")
-                                    .font(.system(size: 32, weight: .regular, design: .serif))
+                                    .font(.custom("Playfair Display", size: 32))
                                     .foregroundColor(.white)
                                 Text("PEOPLE JOINED")
                                     .font(.system(size: 9, weight: .regular))
@@ -128,7 +127,7 @@ struct GalleryView: View {
                     } else if photos.isEmpty {
                         VStack(spacing: 8) {
                             Text("The roll is empty.")
-                                .font(.system(size: 24, weight: .regular, design: .serif))
+                                .font(.custom("Playfair Display", size: 24))
                                 .italic()
                                 .foregroundColor(Color.white.opacity(0.5))
                             Text("NO MEDIA WAS CAPTRD AT THIS EVENT.")
@@ -242,7 +241,7 @@ struct MasonryItemView: View {
                 .frame(height: itemHeight / 2)
                 
                 Text(photo.guest_name)
-                    .font(.system(size: 18, weight: .regular, design: .serif))
+                    .font(.custom("Playfair Display", size: 18))
                     .italic()
                     .foregroundColor(.white)
                     .opacity(0.9)
@@ -359,7 +358,7 @@ struct LightboxView: View {
                     VStack(alignment: .center, spacing: 4) {
                         HStack(alignment: .center, spacing: 8) {
                             Text(photo.guest_name)
-                                .font(.system(size: 28, weight: .regular, design: .serif))
+                                .font(.custom("Playfair Display", size: 28))
                                 .italic()
                                 .foregroundColor(.white)
                             
@@ -395,8 +394,11 @@ struct LightboxView: View {
                             Button(action: {
                                 SocialSharing.shared.shareToSnapchat(imageUrl: photo.storage_path)
                             }) {
-                                Image(systemName: "camera.filters")
-                                    .font(.system(size: 20))
+                                Image("snapchat")
+                                    .renderingMode(.template)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 22, height: 22)
                                     .frame(width: 44, height: 44)
                                     .background(Circle().fill(Color.white.opacity(0.1)))
                                     .foregroundColor(.white)
@@ -414,6 +416,16 @@ struct LightboxView: View {
                                 }
                             }) {
                                 Image(systemName: "square.and.arrow.up")
+                                    .font(.system(size: 20))
+                                    .frame(width: 44, height: 44)
+                                    .background(Circle().fill(Color.white.opacity(0.1)))
+                                    .foregroundColor(.white)
+                            }
+                            
+                            Button(action: {
+                                SocialSharing.shared.saveMedia(url: photo.storage_path)
+                            }) {
+                                Image(systemName: "arrow.down")
                                     .font(.system(size: 20))
                                     .frame(width: 44, height: 44)
                                     .background(Circle().fill(Color.white.opacity(0.1)))
