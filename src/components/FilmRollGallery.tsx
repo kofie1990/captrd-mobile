@@ -4,6 +4,8 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
+import * as MediaLibrary from 'expo-media-library';
+import ShareNative from 'react-native-share';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Sharing from 'expo-sharing';
 import { useVideoPlayer, VideoView } from 'expo-video';
@@ -116,7 +118,7 @@ function GalleryVideoItem({ url, isPlaying, style, isMuted = false }: { url: str
 }
 
 // ─── Lightbox Component ───────────────────────────────────────────────────
-function LightboxOverlay({ photos, initialIndex, onClose, onShare, onSave, isProcessing, onReportPress, onMorePress }: any) {
+function LightboxOverlay({ photos, initialIndex, onClose, onShare, onShareInstagram, onShareSnapchat, onSave, isProcessing, onReportPress, onMorePress }: any) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
 
   const translateY = useSharedValue(0);
@@ -225,12 +227,12 @@ function LightboxOverlay({ photos, initialIndex, onClose, onShare, onSave, isPro
 
             <View style={s.lbActions}>
               <View style={s.socialRow}>
-                <Pressable onPress={() => onShare(activeMedia)} disabled={isProcessing} style={[s.lbActionBtn, s.instaBtn]}>
+                <Pressable onPress={() => onShareInstagram(activeMedia)} disabled={isProcessing} style={[s.lbActionBtn, s.instaBtn]}>
                   <FontAwesome5 name="instagram" size={18} color="#000" />
                   <Text style={s.instaText}>Story</Text>
                 </Pressable>
 
-                <Pressable onPress={() => onShare(activeMedia)} disabled={isProcessing} style={s.lbActionBtn}>
+                <Pressable onPress={() => onShareSnapchat(activeMedia)} disabled={isProcessing} style={s.lbActionBtn}>
                   <FontAwesome5 name="snapchat-ghost" size={18} color="#fff" />
                 </Pressable>
               </View>
@@ -298,11 +300,6 @@ export function FilmRollGallery({ eventData, onViewCamera }: FilmRollGalleryProp
     await reportPhoto(selectedMedia.id, selectedMedia.user_id, reason, details);
   };
 
-  const handleBlockSuccess = () => {
-    setSelectedIndex(null);
-    setLoading(true);
-    fetchPhotos();
-  };
 
   const downloadToCache = async (url: string) => {
     const filename = url.split('/').pop() || `moment_${Date.now()}.jpg`;
@@ -316,10 +313,20 @@ export function FilmRollGallery({ eventData, onViewCamera }: FilmRollGalleryProp
     try {
       setIsProcessing(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'We need permission to save photos to your gallery.');
+        return;
+      }
+
       const localUri = await downloadToCache(media.storage_path);
-      await Sharing.shareAsync(localUri, { dialogTitle: 'Save Captrd Moment', mimeType: 'image/jpeg' });
-    } catch {
-      Alert.alert('Error', 'Could not process image.');
+      await MediaLibrary.saveToLibraryAsync(localUri);
+      
+      Alert.alert('Saved', 'Photo downloaded to your gallery.');
+    } catch (e) {
+      console.error(e);
+      Alert.alert('Error', 'Could not save image.');
     } finally {
       setIsProcessing(false);
     }
@@ -333,6 +340,54 @@ export function FilmRollGallery({ eventData, onViewCamera }: FilmRollGalleryProp
       await Sharing.shareAsync(localUri, { dialogTitle: 'Share Captrd Moment', mimeType: 'image/jpeg' });
     } catch {
       Alert.alert('Error', 'Could not share image.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleShareInstagram = async (media: any) => {
+    try {
+      setIsProcessing(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      const localUri = await downloadToCache(media.storage_path);
+      
+      try {
+        const base64Data = await FileSystem.readAsStringAsync(localUri, { encoding: FileSystem.EncodingType.Base64 });
+        const base64Url = `data:image/jpeg;base64,${base64Data}`;
+        await ShareNative.shareSingle({
+          social: ShareNative.Social.INSTAGRAM_STORIES,
+          backgroundImage: base64Url,
+          appId: '123456789'
+        });
+      } catch (err) {
+        await ShareNative.shareSingle({
+          social: ShareNative.Social.INSTAGRAM,
+          url: localUri,
+        });
+      }
+    } catch (e: any) {
+      if (e?.message !== 'User did not share') {
+        Alert.alert('Error', 'Could not share to Instagram.');
+      }
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleShareSnapchat = async (media: any) => {
+    try {
+      setIsProcessing(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      const localUri = await downloadToCache(media.storage_path);
+      
+      await ShareNative.shareSingle({
+        social: ShareNative.Social.SNAPCHAT || 'snapchat',
+        url: localUri,
+      });
+    } catch (e: any) {
+      if (e?.message !== 'User did not share') {
+        Alert.alert('Error', 'Could not share to Snapchat.');
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -462,6 +517,8 @@ export function FilmRollGallery({ eventData, onViewCamera }: FilmRollGalleryProp
           initialIndex={selectedIndex}
           onClose={() => setSelectedIndex(null)}
           onShare={handleShareToApp}
+          onShareInstagram={handleShareInstagram}
+          onShareSnapchat={handleShareSnapchat}
           onSave={handleSave}
           isProcessing={isProcessing}
           onReportPress={(media: any) => {
@@ -486,12 +543,10 @@ export function FilmRollGallery({ eventData, onViewCamera }: FilmRollGalleryProp
           visible={actionSheetVisible}
           onClose={() => setActionSheetVisible(false)}
           guestName={selectedMedia.guest_name}
-          guestId={selectedMedia.user_id}
           onReport={() => {
             setActionSheetVisible(false);
             setTimeout(() => setReportModalVisible(true), 300);
           }}
-          onBlockSuccess={handleBlockSuccess}
         />
       )}
     </View>

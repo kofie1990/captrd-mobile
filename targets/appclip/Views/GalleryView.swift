@@ -3,6 +3,7 @@ import AVKit
 
 struct GalleryView: View {
     let event: Event
+    var onViewCamera: () -> Void
     
     @State private var photos: [Photo] = []
     @State private var isLoading = true
@@ -46,11 +47,12 @@ struct GalleryView: View {
                         )
                         .frame(height: 200)
                         
-                        // Back Button placeholder (if needed, but MainTabView handles tabs)
-                        // If they wanted a back button, we can add it here.
-                        /*
                         HStack {
-                            Button(action: {}) {
+                            Button(action: {
+                                let generator = UIImpactFeedbackGenerator(style: .light)
+                                generator.impactOccurred()
+                                onViewCamera()
+                            }) {
                                 HStack(spacing: 8) {
                                     Image(systemName: "arrow.left")
                                         .font(.system(size: 16))
@@ -65,7 +67,6 @@ struct GalleryView: View {
                         }
                         .padding(.horizontal, 16)
                         .padding(.bottom, 250)
-                        */
                     }
                     .frame(height: 350)
                     
@@ -376,6 +377,31 @@ struct LightboxView: View {
                         }
                         
                         HStack(spacing: 12) {
+                            Button(action: {
+                                SocialSharing.shared.shareToInstagramStory(imageUrl: photo.storage_path)
+                            }) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "camera.fill")
+                                    Text("Story")
+                                        .font(.system(size: 13, weight: .semibold))
+                                }
+                                .padding(.horizontal, 16)
+                                .frame(height: 44)
+                                .background(Color.white)
+                                .foregroundColor(.black)
+                                .cornerRadius(18)
+                            }
+                            
+                            Button(action: {
+                                SocialSharing.shared.shareToSnapchat(imageUrl: photo.storage_path)
+                            }) {
+                                Image(systemName: "camera.filters")
+                                    .font(.system(size: 20))
+                                    .frame(width: 44, height: 44)
+                                    .background(Circle().fill(Color.white.opacity(0.1)))
+                                    .foregroundColor(.white)
+                            }
+                            
                             Spacer()
                             
                             Button(action: {

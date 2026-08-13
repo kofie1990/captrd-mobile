@@ -9,7 +9,7 @@ struct NameEntryView: View {
     
     var body: some View {
         if hasJoined {
-            MainTabView(event: event)
+            EventContainerView(event: event)
         } else {
             ZStack {
                 Color.black.ignoresSafeArea()

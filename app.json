@@ -182,7 +182,14 @@
             "deploymentTarget": "16.4"
           }
         }
-      ]
+      ],
+      [
+        "react-native-share",
+        {
+          "android": {}
+        }
+      ],
+      "./plugins/withWidgetLogo.js"
     ],
     "experiments": {
       "typedRoutes": true,

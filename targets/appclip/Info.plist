@@ -4,5 +4,12 @@
 <dict>
 	<key>NSCameraUsageDescription</key>
 	<string>Allow Captrd to access your camera to take event photos.</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>instagram-stories</string>
+		<string>snapchat</string>
+	</array>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 </dict>
 </plist>

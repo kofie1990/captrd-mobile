@@ -3,7 +3,7 @@ import AVFoundation
 
 struct CameraView: View {
     let event: Event
-    @Binding var selectedTab: Int
+    var onViewGallery: () -> Void
     
     @StateObject private var model = CameraViewModel()
     @State private var showGrid = false
@@ -133,26 +133,38 @@ struct CameraView: View {
                         Spacer()
                     }
                     
-                    // Viewfinder Overlay
-                    if model.photo == nil {
-                        ViewfinderOverlay(showGrid: showGrid)
-                        if showFlash {
-                            Color.white
-                                .ignoresSafeArea()
-                                .opacity(0.8)
-                        }
+                // Bottom Gradient Overlay for Viewfinder
+                VStack {
+                    Spacer()
+                    LinearGradient(
+                        colors: [.clear, Color.black.opacity(0.6)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 120)
+                    .allowsHitTesting(false)
+                }
+                
+                // Viewfinder Overlay
+                if model.photo == nil {
+                    ViewfinderOverlay(showGrid: showGrid)
+                    if showFlash {
+                        Color.white
+                            .ignoresSafeArea()
+                            .opacity(0.8)
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .cornerRadius(32, corners: [.bottomLeft, .bottomRight])
-                .edgesIgnoringSafeArea(.top)
-                
-                // Bottom Bar
-                HStack {
-                    // Left: Gallery Thumbnail
-                    Button(action: {
-                        selectedTab = 1
-                    }) {
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .cornerRadius(32, corners: [.bottomLeft, .bottomRight])
+            .edgesIgnoringSafeArea(.top)
+            
+            // Bottom Bar
+            HStack {
+                // Left: Gallery Thumbnail
+                Button(action: {
+                    onViewGallery()
+                }) {
                         if let thumb = latestPhotoUrl {
                             AsyncImage(url: URL(string: thumb)) { phase in
                                 if let image = phase.image {
@@ -250,18 +262,27 @@ struct CameraView: View {
                     
                     Spacer()
                     
-                    // Right: Photos Left
-                    if model.photo == nil {
-                        Text("\(photosCount)/\(event.max_photos_per_user ?? 15)")
-                            .font(.system(size: 14, weight: .bold, design: .serif))
+                // Right: Photos Left
+                if model.photo == nil {
+                    let maxPhotos = event.max_photos_per_user ?? 15
+                    let photosLeft = max(0, maxPhotos - photosCount)
+                    
+                    VStack(spacing: 0) {
+                        Text("\(photosLeft)")
+                            .font(.system(size: 24, weight: .bold, design: .serif))
                             .foregroundColor(.black)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 6)
-                            .background(Color.white)
-                            .cornerRadius(12)
-                    } else {
-                        Spacer().frame(width: 48)
+                        Text("LEFT")
+                            .font(.system(size: 10, weight: .bold, design: .monospaced))
+                            .foregroundColor(.black)
+                            .tracking(2)
                     }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color.white)
+                    .cornerRadius(12)
+                } else {
+                    Spacer().frame(width: 48)
+                }
                 }
                 .padding(.horizontal, 32)
                 .padding(.vertical, 32)
@@ -286,6 +307,10 @@ struct CameraView: View {
                     let userPhotos = photos.filter { $0.guest_name == self.guestName }
                     self.photosCount = userPhotos.count
                     self.latestPhotoUrl = userPhotos.first?.storage_path
+                    
+                    let maxPhotos = self.event.max_photos_per_user ?? 15
+                    let left = max(0, maxPhotos - self.photosCount)
+                    LiveActivityManager.shared.updateActivity(eventName: self.event.title, picturesLeft: left, lastImageUrl: self.latestPhotoUrl)
                 }
             }
         }
@@ -302,6 +327,11 @@ struct CameraView: View {
                 case .success(let url):
                     photosCount += 1
                     latestPhotoUrl = url
+                    
+                    let maxPhotos = event.max_photos_per_user ?? 15
+                    let left = max(0, maxPhotos - photosCount)
+                    LiveActivityManager.shared.updateActivity(eventName: event.title, picturesLeft: left, lastImageUrl: url)
+                    
                     let generator = UINotificationFeedbackGenerator()
                     generator.notificationOccurred(.success)
                     model.retakePhoto() // Reset to camera view
