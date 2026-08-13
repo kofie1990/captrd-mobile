@@ -186,7 +186,8 @@
       [
         "react-native-share",
         {
-          "android": {}
+          "android": [],
+          "ios": []
         }
       ],
       "./plugins/withWidgetLogo.js"

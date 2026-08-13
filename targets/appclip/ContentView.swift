@@ -28,7 +28,7 @@ struct ContentView: View {
                     EventEndedView(event: event)
                 } else if LocalStorage.shared.getGuestName(for: event.id) != nil {
                     // Already joined, go to gallery/camera logic
-                    MainTabView(event: event)
+                    EventContainerView(event: event)
                 } else {
                     NameEntryView(event: event)
                 }

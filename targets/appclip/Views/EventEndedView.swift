@@ -7,7 +7,7 @@ struct EventEndedView: View {
     
     var body: some View {
         if showGallery {
-            MainTabView(event: event)
+            EventContainerView(event: event)
         } else {
             ZStack {
                 Color.black.ignoresSafeArea()
