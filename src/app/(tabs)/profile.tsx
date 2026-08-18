@@ -24,7 +24,7 @@ export default function ProfileScreen() {
         Linking.openURL('https://play.google.com/store/account/subscriptions');
       }
     } else {
-      router.push('/paywall');
+      router.push('/paywall' as any);
     }
   };
 

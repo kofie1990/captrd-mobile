@@ -7,7 +7,7 @@ import * as SystemUI from 'expo-system-ui';
 import { DarkTheme, ThemeProvider } from 'expo-router';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useFonts } from 'expo-font';
-import { Inter_400Regular, Inter_700Bold } from '@expo-google-fonts/inter';
+import { Inter_400Regular, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { PlayfairDisplay_400Regular, PlayfairDisplay_400Regular_Italic } from '@expo-google-fonts/playfair-display';
 
 import { useEffect, useState } from 'react';
@@ -32,6 +32,7 @@ function InitialLayout() {
 
   const [loaded, error] = useFonts({
     Inter_400Regular,
+    Inter_600SemiBold,
     Inter_700Bold,
     PlayfairDisplay_400Regular,
     PlayfairDisplay_400Regular_Italic,
@@ -51,9 +52,9 @@ function InitialLayout() {
     if (!loaded || loading) return;
 
     // Define routes that are accessible to everyone (like the event guest page)
-    const isPublic = !segments[0] || segments[0] === 'login' || segments[0] === 'index' || segments[0] === 'e';
+    const isPublic = !segments[0] || segments[0] === 'login' || (segments[0] as string) === 'index' || segments[0] === 'e';
     // Define routes that authenticated users shouldn't see (like login)
-    const isAuthOnlyPrevented = !segments[0] || segments[0] === 'login' || segments[0] === 'index';
+    const isAuthOnlyPrevented = !segments[0] || segments[0] === 'login' || (segments[0] as string) === 'index';
 
     if (!session && !isPublic) {
       // If unauthenticated and trying to access a protected route, go to login

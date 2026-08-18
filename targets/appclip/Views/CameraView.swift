@@ -39,7 +39,7 @@ struct CameraView: View {
                     VStack {
                         if isUploading {
                             Text("Upload in progress...")
-                                .font(.system(size: 11, weight: .bold))
+                                .font(.custom("Inter", size: 11).bold())
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
                                 .background(Color.white.opacity(0.2))
@@ -52,7 +52,7 @@ struct CameraView: View {
                                 HStack(spacing: 8) {
                                     Image(systemName: "arrow.clockwise.icloud.fill")
                                     Text("Retry \(pendingUploads.count) Failed")
-                                        .font(.system(size: 11, weight: .bold))
+                                        .font(.custom("Inter", size: 11).bold())
                                 }
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
@@ -77,12 +77,12 @@ struct CameraView: View {
                         HStack(alignment: .top) {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("\(guestName)'s Roll".uppercased())
-                                    .font(.system(size: 11, weight: .bold, design: .default))
+                                    .font(.custom("Inter", size: 11).bold())
                                     .foregroundColor(Color.white.opacity(0.7))
                                     .tracking(2)
                                 
                                 Text("\(photosCount) / \(event.max_photos_per_user ?? 10) EXPOSURES")
-                                    .font(.system(size: 9, weight: .regular))
+                                    .font(.custom("Inter", size: 9))
                                     .foregroundColor(Color.white.opacity(0.4))
                                     .tracking(2)
                             }
@@ -224,7 +224,7 @@ struct CameraView: View {
                     } else {
                         if photosCount >= (event.max_photos_per_user ?? 15) {
                             Text("ROLL COMPLETE")
-                                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                                .font(.custom("Inter", size: 14).bold())
                                 .foregroundColor(.black)
                                 .padding(.horizontal, 20)
                                 .padding(.vertical, 12)
@@ -269,10 +269,10 @@ struct CameraView: View {
                     
                     VStack(spacing: 0) {
                         Text("\(photosLeft)")
-                            .font(.system(size: 24, weight: .bold, design: .serif))
+                            .font(.custom("Playfair Display", size: 24).bold())
                             .foregroundColor(.black)
                         Text("LEFT")
-                            .font(.system(size: 10, weight: .bold, design: .monospaced))
+                            .font(.custom("Inter", size: 10).bold())
                             .foregroundColor(.black)
                             .tracking(2)
                     }

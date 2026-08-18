@@ -45,6 +45,7 @@ struct GalleryView: View {
                             startPoint: .top,
                             endPoint: .bottom
                         )
+                        .frame(height: 350)
                         
                         HStack {
                             Button(action: {
@@ -56,7 +57,7 @@ struct GalleryView: View {
                                     Image(systemName: "arrow.left")
                                         .font(.system(size: 16))
                                     Text("CAMERA")
-                                        .font(.system(size: 11, weight: .bold))
+                                        .font(.custom("Inter", size: 11).bold())
                                         .tracking(2)
                                 }
                                 .foregroundColor(.white)
@@ -77,7 +78,7 @@ struct GalleryView: View {
                             .tracking(-1)
                         
                         Text("THE FILM ROLL IS DEVELOPED")
-                            .font(.system(size: 10, weight: .regular))
+                            .font(.custom("Inter", size: 10))
                             .foregroundColor(Color.white.opacity(0.8))
                             .tracking(3)
                             .padding(.bottom, 24)
@@ -88,7 +89,7 @@ struct GalleryView: View {
                                     .font(.custom("Playfair Display", size: 32))
                                     .foregroundColor(.white)
                                 Text("TOTAL PICTURES")
-                                    .font(.system(size: 9, weight: .regular))
+                                    .font(.custom("Inter", size: 9))
                                     .foregroundColor(Color.white.opacity(0.5))
                                     .tracking(2)
                             }
@@ -104,7 +105,7 @@ struct GalleryView: View {
                                     .font(.custom("Playfair Display", size: 32))
                                     .foregroundColor(.white)
                                 Text("PEOPLE JOINED")
-                                    .font(.system(size: 9, weight: .regular))
+                                    .font(.custom("Inter", size: 9))
                                     .foregroundColor(Color.white.opacity(0.5))
                                     .tracking(2)
                             }
@@ -131,7 +132,7 @@ struct GalleryView: View {
                                 .italic()
                                 .foregroundColor(Color.white.opacity(0.5))
                             Text("NO MEDIA WAS CAPTRD AT THIS EVENT.")
-                                .font(.system(size: 10, weight: .regular))
+                                .font(.custom("Inter", size: 10))
                                 .foregroundColor(Color.white.opacity(0.3))
                                 .tracking(2)
                         }
@@ -370,7 +371,7 @@ struct LightboxView: View {
                         
                         if let date = ISO8601DateFormatter().date(from: photo.created_at) {
                             Text(date.formatted(date: .omitted, time: .shortened).uppercased())
-                                .font(.system(size: 10, weight: .regular))
+                                .font(.custom("Inter", size: 10))
                                 .foregroundColor(Color.white.opacity(0.4))
                                 .tracking(2)
                         }
@@ -382,7 +383,7 @@ struct LightboxView: View {
                                 HStack(spacing: 8) {
                                     Image(systemName: "camera.fill")
                                     Text("Story")
-                                        .font(.system(size: 13, weight: .semibold))
+                                        .font(.custom("Inter", size: 13).weight(.semibold))
                                 }
                                 .padding(.horizontal, 16)
                                 .frame(height: 44)

@@ -19,27 +19,30 @@ const CaptrdLiveActivity = (props: LiveActivityProps) => {
           padding({ all: 16 }),
           background('#000000'),
           cornerRadius(32),
-          widgetURL(`captrd://event/${props.eventId || 'current'}`)
+          widgetURL(`https://captrd.live/e/${props.eventId || 'current'}`)
         ]}
       >
-        <HStack alignment="center" spacing={16}>
-          {/* Main Logo & Event Info */}
-          <HStack alignment="center" spacing={16}>
-            <Image
-              assetName="logo"
-              size={24}
-              color="#FFFFFF"
-            />
-            
-            <VStack alignment="leading" spacing={2}>
-              <Text modifiers={[foregroundStyle('#FFFFFF'), font({ weight: 'bold', size: 18, design: 'serif' })]}>
-                {props.eventName || 'Captrd'}
-              </Text>
-              <Text modifiers={[foregroundStyle('#FFFFFF'), font({ weight: 'regular', size: 14, design: 'serif' })]}>
-                {String(props.picturesLeft)} photos left
-              </Text>
-            </VStack>
-          </HStack>
+        <HStack alignment="center" spacing={12}>
+          <Image
+            assetName="logo"
+            size={20}
+            color="#FFFFFF"
+          />
+          <Text modifiers={[foregroundStyle('#FFFFFF'), font({ weight: 'bold', size: 14, design: 'serif' })]}>
+            Captrd
+          </Text>
+          <Spacer />
+        </HStack>
+        
+        <HStack alignment="center">
+          <VStack alignment="leading" spacing={2}>
+            <Text modifiers={[foregroundStyle('#FFFFFF'), font({ weight: 'bold', size: 18, design: 'serif' })]}>
+              {props.eventName || 'Current Event'}
+            </Text>
+            <Text modifiers={[foregroundStyle('#FFFFFF'), font({ weight: 'regular', size: 14, design: 'serif' })]}>
+              {String(props.picturesLeft)} photos left
+            </Text>
+          </VStack>
 
           <Spacer />
 
@@ -72,7 +75,7 @@ const CaptrdLiveActivity = (props: LiveActivityProps) => {
     ),
     expandedTrailing: <Text modifiers={[foregroundStyle('#FFFFFF'), font({ weight: 'regular', design: 'serif' })]}>{String(props.picturesLeft)} left</Text>,
     expandedBottom: (
-      <HStack alignment="center" modifiers={[padding({ top: 12 }), widgetURL(`captrd://event/${props.eventId || 'current'}`)]}>
+      <HStack alignment="center" modifiers={[padding({ top: 12 }), widgetURL(`https://captrd.live/e/${props.eventId || 'current'}`)]}>
         <Spacer />
         <VStack
            alignment="center"

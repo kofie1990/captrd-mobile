@@ -15,10 +15,11 @@ struct ContentView: View {
                         .font(.system(size: 48))
                         .foregroundColor(.red)
                     Text("Error")
-                        .font(.title2).bold()
+                        .font(.custom("Inter", size: 22).bold())
                         .foregroundColor(.white)
                     Text(error)
                         .foregroundColor(.gray)
+                        .font(.custom("Inter", size: 16))
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
                 }
@@ -95,13 +96,13 @@ struct SplashLoadingView: View {
                 // Premium Text Reveal
                 VStack(spacing: 8) {
                     Text("CAPTRD")
-                        .font(.system(size: 28, weight: .regular, design: .serif))
+                        .font(.custom("Playfair Display", size: 28))
                         .foregroundColor(.white)
                         .tracking(textTracking)
                         .opacity(scale)
                     
                     Text("DEVELOPING FILM...")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(.custom("Inter", size: 9).bold())
                         .foregroundColor(Color.white.opacity(0.5))
                         .tracking(4)
                 }

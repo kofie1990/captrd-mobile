@@ -38,7 +38,7 @@ struct NameEntryView: View {
                 }
                 
                 LinearGradient(
-                    colors: [Color.black.opacity(0.4), Color.clear, Color.black.opacity(0.95)],
+                    colors: [Color.black.opacity(0.4), Color.black.opacity(0.8), Color.black],
                     startPoint: .top,
                     endPoint: .bottom
                 ).ignoresSafeArea()
@@ -79,7 +79,7 @@ struct NameEntryView: View {
                         
                         if let revealDate = event.reveal_at {
                             Text(revealDate.formatted(date: .numeric, time: .omitted).uppercased())
-                                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                .font(.custom("Inter", size: 12).bold())
                                 .tracking(3)
                                 .foregroundColor(Color.white.opacity(0.8))
                                 .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 0)
@@ -115,7 +115,7 @@ struct NameEntryView: View {
                                         .progressViewStyle(CircularProgressViewStyle(tint: .black))
                                 } else {
                                     Text("JOIN FILM ROLL")
-                                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                        .font(.custom("Inter", size: 12).bold())
                                         .tracking(2)
                                 }
                             }

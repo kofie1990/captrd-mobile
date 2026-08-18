@@ -5,7 +5,7 @@ import * as FileSystem from 'expo-file-system';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import * as MediaLibrary from 'expo-media-library';
-import ShareNative from 'react-native-share';
+import ShareNative, { Social, type ShareSingleOptions } from 'react-native-share';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Sharing from 'expo-sharing';
 import { useVideoPlayer, VideoView } from 'expo-video';
@@ -355,15 +355,15 @@ export function FilmRollGallery({ eventData, onViewCamera }: FilmRollGalleryProp
         const base64Data = await FileSystem.readAsStringAsync(localUri, { encoding: FileSystem.EncodingType.Base64 });
         const base64Url = `data:image/jpeg;base64,${base64Data}`;
         await ShareNative.shareSingle({
-          social: ShareNative.Social.INSTAGRAM_STORIES,
+          social: Social.InstagramStories,
           backgroundImage: base64Url,
           appId: '123456789'
         });
       } catch (err) {
         await ShareNative.shareSingle({
-          social: ShareNative.Social.INSTAGRAM,
+          social: Social.Instagram,
           url: localUri,
-        });
+        } as ShareSingleOptions);
       }
     } catch (e: any) {
       if (e?.message !== 'User did not share') {
@@ -381,9 +381,9 @@ export function FilmRollGallery({ eventData, onViewCamera }: FilmRollGalleryProp
       const localUri = await downloadToCache(media.storage_path);
       
       await ShareNative.shareSingle({
-        social: ShareNative.Social.SNAPCHAT || 'snapchat',
+        social: Social.Snapchat,
         url: localUri,
-      });
+      } as ShareSingleOptions);
     } catch (e: any) {
       if (e?.message !== 'User did not share') {
         Alert.alert('Error', 'Could not share to Snapchat.');

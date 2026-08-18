@@ -121,7 +121,7 @@ export function CameraViewfinder({
   const [captureMode, setCaptureMode] = useState<'photo' | 'video'>('photo');
   const [recording, setRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(10);
-  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const recordingIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Preview state (review before upload, matching web)
   const [previewUri, setPreviewUri] = useState<string | null>(null);

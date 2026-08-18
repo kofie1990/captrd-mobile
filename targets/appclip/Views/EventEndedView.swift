@@ -56,12 +56,12 @@ struct EventEndedView: View {
                     Spacer()
                     
                     Text(event.title)
-                        .font(.system(size: 40, weight: .bold, design: .serif))
+                        .font(.custom("Playfair Display", size: 40).bold())
                         .foregroundColor(.white)
                         .multilineTextAlignment(.center)
                     
                     Text("Event has ended. Thank you for contributing to the experience.")
-                        .font(.system(size: 20, design: .serif))
+                        .font(.custom("Playfair Display", size: 20))
                         .italic()
                         .foregroundColor(Color.white.opacity(0.9))
                         .multilineTextAlignment(.center)
@@ -72,7 +72,7 @@ struct EventEndedView: View {
                             showGallery = true
                         }) {
                             Text("CLICK HERE TO SEE THE EVENT PHOTOS")
-                                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                .font(.custom("Inter", size: 12).bold())
                                 .foregroundColor(.black)
                                 .padding()
                                 .frame(maxWidth: .infinity)

@@ -69,7 +69,8 @@ export default function EventPortalScreen() {
                 if (CaptrdLiveActivityFactory.getInstances().length === 0) {
                   CaptrdLiveActivityFactory.start({
                     eventName: data.title,
-                    picturesLeft: data.max_photos_per_user || 15
+                    picturesLeft: data.max_photos_per_user || 15,
+                    eventId: eventId
                   });
                 }
               } catch (e) {
@@ -114,9 +115,11 @@ export default function EventPortalScreen() {
         if (Platform.OS === 'ios') {
           try {
             if (CaptrdLiveActivityFactory.getInstances().length === 0) {
+              const currentEventId = Array.isArray(code) ? code[0] : code;
               CaptrdLiveActivityFactory.start({
                 eventName: eventData.title,
-                picturesLeft: eventData.max_photos_per_user || 15
+                picturesLeft: eventData.max_photos_per_user || 15,
+                eventId: currentEventId as string
               });
             }
           } catch (e) {

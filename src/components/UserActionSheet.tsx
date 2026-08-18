@@ -7,7 +7,9 @@ interface UserActionSheetProps {
   visible: boolean;
   onClose: () => void;
   guestName: string;
+  guestId?: string;
   onReport: () => void;
+  onBlockSuccess?: () => void;
 }
 
 export function UserActionSheet({

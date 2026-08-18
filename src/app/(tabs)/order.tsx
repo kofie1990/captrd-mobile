@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ArrowLeft, Book, CheckCircle, ChevronLeft, ChevronRight, Image as ImageIcon, LayoutGrid } from 'lucide-react-native';
 import { useEffect, useState, useRef } from 'react';
-import { Paystack, paystackProps } from 'react-native-paystack-webview';
+import { PaystackProvider, usePaystack, PaystackProps } from 'react-native-paystack-webview';
 import { Alert, Dimensions, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
@@ -26,7 +26,7 @@ type Photo = {
   created_at: string;
 };
 
-export default function OrderScreen() {
+function OrderScreenContent() {
   const { user } = useAuth();
   const router = useRouter();
 
@@ -54,7 +54,7 @@ export default function OrderScreen() {
   const [simulatingCheckout, setSimulatingCheckout] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
   const [currentReference, setCurrentReference] = useState("");
-  const paystackWebViewRef = useRef<paystackProps.PayStackRef>(null);
+  const paystack = usePaystack();
 
   useEffect(() => {
     if (!user) return;
@@ -116,9 +116,14 @@ export default function OrderScreen() {
         setSimulatingCheckout(false);
         return;
       }
-      
       // Open Paystack after order is securely in database
-      paystackWebViewRef.current?.startTransaction();
+      paystack.popup.checkout({
+        email: shippingEmail || "placeholder@example.com",
+        amount: 399.00,
+        reference: generatedRef,
+        onSuccess: handlePaymentSuccess,
+        onCancel: handlePaymentCancel,
+      });
     } catch (err) {
       console.error(err);
       Alert.alert("Error", "An unexpected error occurred.");
@@ -132,7 +137,7 @@ export default function OrderScreen() {
     setSimulatingCheckout(false);
   };
 
-  const handlePaymentCancel = () => {
+  const handlePaymentCancel = (_res?: any) => {
     setSimulatingCheckout(false);
   };
 
@@ -176,15 +181,6 @@ export default function OrderScreen() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, backgroundColor: '#09090b' }}>
       <StatusBar style="light" />
-      <Paystack
-        paystackKey={process.env.EXPO_PUBLIC_PAYSTACK_KEY || ""}
-        billingEmail={shippingEmail || "placeholder@example.com"}
-        amount={399.00}
-        refNumber={currentReference}
-        onCancel={handlePaymentCancel}
-        onSuccess={handlePaymentSuccess}
-        ref={paystackWebViewRef}
-      />
       <ScrollView contentContainerStyle={{ paddingBottom: 120, paddingTop: 60 }} showsVerticalScrollIndicator={false}>
         <View className="px-6 mb-6">
           {selectedEvent && (
@@ -539,5 +535,13 @@ export default function OrderScreen() {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+  );
+}
+
+export default function OrderScreen() {
+  return (
+    <PaystackProvider publicKey={process.env.EXPO_PUBLIC_PAYSTACK_KEY || ""}>
+      <OrderScreenContent />
+    </PaystackProvider>
   );
 }
