@@ -4,6 +4,8 @@ module.exports = {
   name: "CaptrdAppClip",
   displayName: "Captrd",
   bundleIdentifier: "live.captrd.app.appclip",
+  version: "$(MARKETING_VERSION)",
+  buildNumber: "$(CURRENT_PROJECT_VERSION)",
   icon: "../../assets/images/icon.png",
   exportJs: false,
   deploymentTarget: "16.4",
